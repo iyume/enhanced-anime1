@@ -1,13 +1,18 @@
 import { resolve } from 'node:path'
+import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'wxt'
 
 export default defineConfig({
   modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
 
+  vite: _ => ({
+    plugins: [tailwindcss()],
+  }),
+
   webExt: {
     // Windows:
-    // chromiumProfile: `${resolve('.wxt/chrome-data')}`,
-    // keepProfileChanges: true,
+    chromiumProfile: `${resolve('.wxt/chrome-data')}`,
+    keepProfileChanges: true,
 
     // Mac/Linux:
     // chromiumArgs: ['--user-data-dir=./.wxt/chrome-data'],

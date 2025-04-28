@@ -1,0 +1,51 @@
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './assets/tailwind.css'
+
+// eslint-disable-next-line react-refresh/only-export-components
+export default defineContentScript({
+  matches: [
+    '*://anime1.me/*',
+    // '*://*.bgm.tv/*',
+    // '*://*.bangumi.tv/*',
+    // '*://*.chii.in/*',
+  ],
+
+  // DOMContentLoaded -> wait max 200ms for window.onload -> fire
+  // https://stackoverflow.com/questions/33248629/when-does-a-run-at-document-idle-content-script-run
+  runAt: 'document_idle',
+
+  cssInjectionMode: 'ui',
+
+  async main(ctx) {
+    const ui = await createShadowRootUi(ctx, {
+      name: 'anime1-tracker',
+      position: 'inline',
+      anchor: 'html',
+
+      onMount: (container) => {
+        const wrapper = document.createElement('div')
+        container.append(wrapper)
+
+        const root = ReactDOM.createRoot(wrapper)
+        root.render(<App />)
+        return { root, wrapper }
+      },
+
+      onRemove: (root) => {
+        root?.root.unmount()
+        root?.wrapper.remove()
+      },
+    })
+    ui.mount()
+
+    console.log('Anime1 content script loaded')
+  },
+})
+
+export function registerAnime1BackgroundTask() {
+  setInterval(() => {
+    const info = anime1VideoListObserver()
+    console.log('Anime1 video info:', info)
+  }, 5000)
+}
