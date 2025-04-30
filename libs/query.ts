@@ -12,7 +12,6 @@ export function useAnime1EpisodeQuery() {
       const anime1Episodes = await storageAnime1Episodes.getValue()
       return _.keyBy(anime1Episodes, 'id')
     },
-    placeholderData: {},
   })
 }
 
