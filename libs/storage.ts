@@ -7,12 +7,12 @@ export interface StorageAnime1Episode {
   id: string
   categoryId: string
   title: string
-  episode: number
+  episode: number | null
   currentTime: number
   duration: number
 }
 
-export const storageAnime1Episodes = storage.defineItem<Record<string, StorageAnime1Episode>>('local:Anime1Episodes', {
+export const storageAnime1Episodes = storage.defineItem<StorageAnime1Episode[]>('local:Anime1Episodes', {
   version: 1,
-  fallback: {},
+  fallback: [],
 })

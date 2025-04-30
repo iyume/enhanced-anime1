@@ -1,13 +1,13 @@
 import { queryClient } from '@/libs/query'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { Anime1InfoProvider } from './anime1-info-provider'
+import { Anime1StateProvider } from './anime1-state-provider'
 
 export function RootProviders({ children }: React.PropsWithChildren) {
   return (
     <QueryClientProvider client={queryClient}>
-      <Anime1InfoProvider value={null}>
+      <Anime1StateProvider>
         {children}
-      </Anime1InfoProvider>
+      </Anime1StateProvider>
     </QueryClientProvider>
   )
 }

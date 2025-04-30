@@ -1,16 +1,18 @@
 import { getAnime1PageType } from '@/libs/anime1-site-parser'
+import { Anime1VideoWorkers } from './components/anime1-video-worker'
+import { useAfterRerender } from './hooks/common/useAfterRerender'
 import { RootProviders } from './providers/root-providers'
 
 export default function App() {
-  const hostname = window.location.hostname
-  if (hostname !== 'anime1.me') {
-    return null
-  }
-
   const pageType = getAnime1PageType()
+
+  useAfterRerender(() => {
+    console.log('App re-render')
+  })
 
   return (
     <RootProviders>
+      <Anime1VideoWorkers />
       <div
         className="fixed top-0 right-0 w-[300px] h-[300px] bg-cyan-500 z-[999999]"
       >

@@ -1,24 +1,33 @@
-export function getAnime1PageType(): 'home' | 'episode' | 'category' | 'unknown' {
+export type Anime1PageType = 'home' | 'episode' | 'category' | 'unknown'
+
+let cachedPageType: Anime1PageType | null = null
+
+export function getAnime1PageType(): Anime1PageType {
+  if (cachedPageType) {
+    return cachedPageType
+  }
   const path = window.location.pathname
   const search = window.location.search
+  let pageType: Anime1PageType = 'unknown'
   if (path === '/' && !search) {
-    return 'home'
+    pageType = 'home'
   }
   else if (path.startsWith('/category/')) {
-    return 'category'
+    pageType = 'category'
   }
   else if (/^\/\d+$/.test(path)) {
-    return 'episode'
+    pageType = 'episode'
   }
-  return 'unknown'
+  cachedPageType = pageType
+  return pageType
 }
 
-interface IAnime1CategoryInfo {
+export interface IAnime1CategoryInfo {
   title: string
   episodes: IAnime1Video[]
 }
 
-interface IAnime1Video {
+export interface IAnime1Video {
   id: string
   categoryId: string
   title: string
@@ -26,8 +35,8 @@ interface IAnime1Video {
   element: HTMLVideoElement
 }
 
-export function parseAnime1CategoryPage(): IAnime1CategoryInfo {
-  const title = document.querySelector('.page-header h1.page-title')?.textContent || 'Unable to parse title'
+export function parseAnime1CategoryPage(): IAnime1CategoryInfo | null {
+  const title = document.querySelector('.page-header h1.page-title')?.textContent
 
   const episodes: IAnime1Video[] = []
 
@@ -39,13 +48,18 @@ export function parseAnime1CategoryPage(): IAnime1CategoryInfo {
     episodes.push(episode)
   })
 
+  if (!title || episodes.length === 0) {
+    console.error('Failed to parse category page:', { title, episodes })
+    return null
+  }
+
   return { title, episodes }
 }
 
 export function parseAnime1ArticlePage(): IAnime1Video | null {
   const article = document.querySelector('article.post')
   if (!article) {
-    console.error('Article not found on page')
+    console.error('Failed to parse article page')
     return null
   }
   return parseAnime1Article(article)
@@ -57,7 +71,7 @@ function parseAnime1Article(article: Element): IAnime1Video | null {
     console.error('Episode ID not found for article:', article)
     return null
   }
-  const categoryId = article.id.replace('category-', '')
+  const categoryId = Array.from(article.classList).find(className => className.startsWith('category-'))?.replace('category-', '')
   if (!categoryId) {
     console.error('Category ID not found for article:', article)
     return null

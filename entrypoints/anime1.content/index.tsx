@@ -24,7 +24,13 @@ export default defineContentScript({
       anchor: 'html',
 
       onMount: (container) => {
+        const hostname = window.location.hostname
+        if (hostname !== 'anime1.me') {
+          return
+        }
+
         const wrapper = document.createElement('div')
+        wrapper.id = 'app-wrapper'
         container.append(wrapper)
 
         const root = ReactDOM.createRoot(wrapper)
@@ -39,13 +45,6 @@ export default defineContentScript({
     })
     ui.mount()
 
-    console.log('Anime1 content script loaded')
+    console.log('Anime1.me tracker content script loaded')
   },
 })
-
-export function registerAnime1BackgroundTask() {
-  setInterval(() => {
-    const info = anime1VideoListObserver()
-    console.log('Anime1 video info:', info)
-  }, 5000)
-}
