@@ -41,9 +41,18 @@ function parseCategoryIdFromUrl(url: string): string {
   return ''
 }
 
+// Parse XXX(05)
+function parseEpisodeFromTableCell(td: HTMLTableCellElement): number | null {
+  const match = td.textContent?.match(/\((\d+)\)/)
+  if (match) {
+    return Number.parseInt(match[1])
+  }
+  return null
+}
+
 export const Anime1HomeUIInject: FC = () => {
   const { data } = useAnime1EpisodeQuery()
-  const [titleTdElements, setTitleTdElements] = useState<Element[]>([])
+  const [episodeTrElements, setEpisodeTrElements] = useState<HTMLTableRowElement[]>([])
 
   useDocumentMutationObserver((mutations) => {
     // Skip changes for data-is-anime1-tracker
@@ -54,21 +63,31 @@ export const Anime1HomeUIInject: FC = () => {
     if (isAnime1Tracker) {
       return
     }
-    const elements = Array.from(document.querySelectorAll('table tbody tr td:nth-child(1)')) as HTMLTableCellElement[]
-    setTitleTdElements(Array.from(elements))
+    const elements = Array.from(document.querySelectorAll('table tbody tr')) as HTMLTableRowElement[]
+    // Check if the elements are the same as before
+    // Useful when the page is re-rendered (caused by viewport change)
+    if (elements.length === episodeTrElements.length && elements.every((el, index) => el === episodeTrElements[index])) {
+      return
+    }
+    setEpisodeTrElements(elements)
   })
 
   useEffect(() => {
-    console.log('Process', titleTdElements)
-    titleTdElements.forEach((td) => {
-      if (td.children.length > 1) {
+    console.log('Process', episodeTrElements)
+    episodeTrElements.forEach((tr) => {
+      const tdList = tr.querySelectorAll('td')
+      if (tdList.length < 2) {
         return
       }
-      const a = td.querySelector('a') as HTMLAnchorElement
-      if (!a) {
+      const [titleTd, episodeTd, ..._rest] = tdList
+      if (titleTd.children.length > 1) {
         return
       }
-      const categoryId = parseCategoryIdFromUrl(a.href)
+      const titleAnchor = titleTd.querySelector('a')
+      if (!titleAnchor) {
+        return
+      }
+      const categoryId = parseCategoryIdFromUrl(titleAnchor.href)
       if (!categoryId) {
         return
       }
@@ -76,19 +95,49 @@ export const Anime1HomeUIInject: FC = () => {
       if (!episodes || !episodes.length) {
         return
       }
-      const lastEpisode = _.maxBy(episodes, e => e.episode)!
+      const lastEpisode = _.maxBy(episodes, e => e.episodeNumber)!
+
+      // Gray the text if the episode is seen
+      const cellEpisode = parseEpisodeFromTableCell(episodeTd)
+      if (lastEpisode.episodeNumber !== null && cellEpisode !== null) {
+        if (cellEpisode <= lastEpisode.episodeNumber) {
+          tr.style.color = '#9ca3af'
+          titleAnchor.style.color = '#9ca3af'
+          tr.style.textDecoration = 'line-through'
+        }
+      }
+
       const progressBadge = document.createElement('span')
       progressBadge.dataset.isAnime1Tracker = 'true'
-      progressBadge.className = 'anime1-tracker-progress-badge'
       progressBadge.style = `
-        background-color: #ff0000;
-        color: #fff;
-        margin-left: 5px;
-        `
-      progressBadge.textContent = `(${lastEpisode.episode})`
-      td.appendChild(progressBadge)
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+        padding: 4px 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border-radius: 12px;
+        background-color: #6366f1;
+        color: white;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+      `
+
+      const iconSpan = document.createElement('span')
+      iconSpan.textContent = '▶ '
+      iconSpan.style = `
+        font-size: 0.7rem;
+        margin-right: 4px;
+      `
+      const textSpan = document.createElement('span')
+      textSpan.textContent = `${lastEpisode.displayEpisodeNumber} (${lastEpisode.progressPercent}%)`
+
+      progressBadge.appendChild(iconSpan)
+      progressBadge.appendChild(textSpan)
+      titleTd.appendChild(progressBadge)
     })
-  }, [titleTdElements, data])
+  }, [episodeTrElements, data])
 
   return null
 }

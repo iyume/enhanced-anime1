@@ -31,7 +31,6 @@ export interface IAnime1Video {
   id: string
   categoryId: string
   title: string
-  episode: number | null
   element: HTMLVideoElement
 }
 
@@ -79,11 +78,6 @@ function parseAnime1Article(article: Element): IAnime1Video | null {
   const episodeTitleElement = article.querySelector('.entry-title a')
   const episodeTitle = episodeTitleElement?.textContent || 'Unknown Episode'
 
-  // Parse episode from title `title [01]`
-  // 有可能是剧场版 https://anime1.me/category/2024%e5%b9%b4%e6%98%a5%e5%ad%a3/%e5%8a%87%e5%a0%b4%e7%b8%bd%e9%9b%86%e7%af%87-%e5%ad%a4%e7%8d%a8%e6%90%96%e6%bb%be-re
-  const episodeMatch = episodeTitle.match(/\[(\d+)\]/)
-  const episodeNumber = episodeMatch ? Number.parseInt(episodeMatch[1]) : null
-
   // Parse video.js info
   const videoPlayer = article.querySelector('.vjscontainer .video-js')
   if (!videoPlayer) {
@@ -103,7 +97,6 @@ function parseAnime1Article(article: Element): IAnime1Video | null {
     id: episodeId,
     categoryId,
     title: episodeTitle,
-    episode: episodeNumber,
     element: videoElement,
   }
 }

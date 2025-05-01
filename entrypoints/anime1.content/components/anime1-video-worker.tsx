@@ -52,7 +52,6 @@ export const Anime1VideoWorkers: FC = memo(() => {
         id: video.id,
         categoryId: video.categoryId,
         title: video.title,
-        episode: video.episode,
         currentTime: progress.currentTime,
         duration: progress.duration,
       })

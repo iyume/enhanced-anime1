@@ -10,7 +10,32 @@ export function useAnime1EpisodeQuery() {
     queryKey: ['anime1Episodes'],
     queryFn: async () => {
       const anime1Episodes = await storageAnime1Episodes.getValue()
-      return _.keyBy(anime1Episodes, 'id')
+
+      const richAnime1Episodes = anime1Episodes.map((ep) => {
+        const episodeNumber = ((): number | null => {
+          // Parse episode from title `title [01]`
+          // 有可能是剧场版 https://anime1.me/category/2024%e5%b9%b4%e6%98%a5%e5%ad%a3/%e5%8a%87%e5%a0%b4%e7%b8%bd%e9%9b%86%e7%af%87-%e5%ad%a4%e7%8d%a8%e6%90%96%e6%bb%be-re
+          const episodeMatch = ep.title.match(/\[(\d+)\]/)
+          return episodeMatch ? Number.parseInt(episodeMatch[1], 10) : null
+        })()
+        const displayEpisodeNumber = `${episodeNumber ?? '剧场版'}`.padStart(2, '0')
+        const progressPercent = ((): number => {
+          if (ep.duration && Number.isFinite(ep.duration)
+            && ep.currentTime && Number.isFinite(ep.currentTime)
+          ) {
+            return Math.min(Math.round((ep.currentTime / ep.duration) * 100), 100)
+          }
+          return Number.NaN
+        })()
+        return {
+          ...ep,
+          episodeNumber,
+          displayEpisodeNumber,
+          progressPercent,
+        }
+      })
+
+      return _.keyBy(richAnime1Episodes, 'id')
     },
   })
 }

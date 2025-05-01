@@ -7,7 +7,6 @@ export interface StorageAnime1Episode {
   id: string
   categoryId: string
   title: string
-  episode: number | null
   currentTime: number
   duration: number
 }
