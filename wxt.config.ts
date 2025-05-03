@@ -27,6 +27,6 @@ export default defineConfig({
     name: 'Anime1.me Tracker',
     description:
       'Automatically tracks anime1.me viewing history and syncs watch progress to your bgm.tv (Bangumi) account.',
-    permissions: ['storage', 'activeTab', 'scripting'],
+    permissions: ['storage', 'activeTab', 'scripting', 'identity'],
   },
 })
