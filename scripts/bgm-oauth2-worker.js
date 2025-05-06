@@ -6,6 +6,17 @@ const BGM_AUTH_URL = 'https://bgm.tv/oauth/access_token'
 
 export default {
   async fetch(request, env, ctx) {
+    // if (request.method === 'OPTIONS') {
+    //   return new Response('ok', {
+    //     status: 200,
+    //     headers: {
+    //       'Access-Control-Allow-Origin': env.ALLOW_ORIGIN,
+    //       'Access-Control-Allow-Methods': 'POST',
+    //       'Access-Control-Allow-Headers': '*',
+    //     },
+    //   })
+    // }
+
     if (request.method !== 'POST')
       return new Response('Bad method', { status: 400 })
 

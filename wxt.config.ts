@@ -28,5 +28,8 @@ export default defineConfig({
     description:
       'Automatically tracks anime1.me viewing history and syncs watch progress to your bgm.tv (Bangumi) account.',
     permissions: ['storage', 'activeTab', 'scripting', 'identity'],
+    host_permissions: [
+      'https://bangumi-token-exchanger.iyumelive.workers.dev/*',
+    ],
   },
 })

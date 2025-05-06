@@ -1,4 +1,5 @@
 import { defineProxyService } from '@webext-core/proxy-service'
+import { launchWebAuthFlowAsync } from './utils'
 
 interface BangumiOAuthResponse {
   access_token: string
@@ -9,13 +10,19 @@ interface BangumiOAuthResponse {
   user_id: string
 }
 
-async function exchangeCode(code: string): Promise<BangumiOAuthResponse | null> {
-  const exchangerUrl = import.meta.env.WXT_BGM_OAUTH2_WORKER_URL
-  if (!exchangerUrl) {
-    console.error('Bangumi OAuth2 worker url not found')
-    return null
-  }
-  const response = await fetch(exchangerUrl, {
+const WXT_BGM_OAUTH2_WORKER_URL = import.meta.env.WXT_BGM_OAUTH2_WORKER_URL
+if (!WXT_BGM_OAUTH2_WORKER_URL) {
+  throw new Error('Bangumi OAuth2 worker URL is not configured')
+}
+const WXT_BGM_APP_ID = import.meta.env.WXT_BGM_APP_ID
+if (!WXT_BGM_APP_ID) {
+  throw new Error('Bangumi app id is not configured')
+}
+
+async function exchangeCode(code: string): Promise<BangumiOAuthResponse> {
+  // Must ensure the worker URL is added to host_permissions, otherwise
+  // the request will be blocked by CORS
+  const response = await fetch(WXT_BGM_OAUTH2_WORKER_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -23,8 +30,7 @@ async function exchangeCode(code: string): Promise<BangumiOAuthResponse | null> 
     body: JSON.stringify({ code }),
   })
   if (!response.ok) {
-    console.error('Exchange code failed', await response.text())
-    return null
+    throw new Error(`Exchanger server error: ${await response.text()}`)
   }
   const data = await response.json()
   return data as BangumiOAuthResponse
@@ -36,38 +42,18 @@ class ProxyService {
     return response.json()
   }
 
-  launchBangumiOAuth() {
-    const appId = import.meta.env.WXT_BGM_APP_ID
-    if (!appId) {
-      console.error('Bangumi app id not found')
-      return 'error'
+  async launchBangumiOAuth() {
+    try {
+      const code = await launchWebAuthFlowAsync(
+        `https://bgm.tv/oauth/authorize?client_id=${WXT_BGM_APP_ID}&response_type=code`,
+      )
+      const response = await exchangeCode(code)
+      return response
     }
-    browser.identity.launchWebAuthFlow(
-      {
-        url: `https://bgm.tv/oauth/authorize?client_id=${appId}&response_type=code`,
-        interactive: true,
-      },
-      // Chrome will check if redirectUrl match https://<app-id>.chromiumapp.org/*
-      async (redirectUrl) => {
-        if (!redirectUrl) {
-          // User cancelled or server error
-          console.error('OAuth failed')
-          return
-        }
-        const url = new URL(redirectUrl)
-        const code = url.searchParams.get('code')
-        if (!code) {
-          console.error('Code not found in redirectUrl')
-          return
-        }
-        console.log('code', code)
-        // TODO: handle CORS
-        const response = await exchangeCode(code)
-        console.log('response', response)
-      },
-    )
-    // how to keep flow state?
-    return 'processing'
+    catch (e) {
+      console.error('Launch web auth flow failed', e)
+      return null
+    }
   }
 }
 
