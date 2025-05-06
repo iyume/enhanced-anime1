@@ -24,7 +24,7 @@ export default defineConfig({
 
   manifestVersion: 3,
   manifest: {
-    name: 'Anime1.me Tracker',
+    name: 'Enhanced Anime1',
     description:
       'Automatically tracks anime1.me viewing history and syncs watch progress to your bgm.tv (Bangumi) account.',
     permissions: ['storage', 'activeTab', 'scripting', 'identity'],

@@ -19,7 +19,7 @@ export default defineContentScript({
 
   async main(ctx) {
     const ui = await createShadowRootUi(ctx, {
-      name: 'anime1-tracker',
+      name: 'enhanced-anime1',
       position: 'inline',
       anchor: 'html',
 
