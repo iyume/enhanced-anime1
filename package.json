@@ -22,9 +22,13 @@
     "@tanstack/react-query": "^5.74.4",
     "@types/lodash": "^4.17.16",
     "@webext-core/proxy-service": "^1.2.1",
+    "clsx": "^2.1.1",
     "lodash": "^4.17.21",
+    "lucide-react": "^0.508.0",
+    "openapi-fetch": "^0.13.7",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "tailwind-merge": "^3.2.0",
     "tailwindcss": "^4.1.4"
   },
   "devDependencies": {
@@ -38,6 +42,7 @@
     "eslint-plugin-format": "^1.0.1",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
+    "openapi-typescript": "^7.7.1",
     "typescript": "^5.8.3",
     "wxt": "^0.20.0"
   }

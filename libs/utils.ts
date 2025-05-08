@@ -1,3 +1,11 @@
+import type { ClassValue } from 'clsx'
+import { clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 export function launchWebAuthFlowAsync(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
     browser.identity.launchWebAuthFlow(

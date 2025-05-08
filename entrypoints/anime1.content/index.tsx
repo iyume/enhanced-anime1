@@ -1,3 +1,4 @@
+import { registerAnime1StorageEvent } from '@/libs/dom-utils'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './assets/tailwind.css'
@@ -28,6 +29,8 @@ export default defineContentScript({
         if (hostname !== 'anime1.me') {
           return
         }
+
+        registerAnime1StorageEvent()
 
         const wrapper = document.createElement('div')
         wrapper.id = 'app-wrapper'

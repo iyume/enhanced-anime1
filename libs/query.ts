@@ -3,7 +3,16 @@ import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/re
 import _ from 'lodash'
 import { storageAnime1Episodes } from './storage'
 
-export const queryClient = new QueryClient()
+const DO_NOT_RETRY_CODES = new Set([400, 401, 403, 404, 422])
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Infinity,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
 
 export function useAnime1EpisodeQuery() {
   return useQuery({
