@@ -1,1 +1,23 @@
 @import 'tailwindcss';
+
+/* Use dark mode manually (not respect prefers-color-scheme) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    /* Anime1 primary color */
+    --primary: #77cc6d;
+
+    --background: #f5f5f5;
+    --text: #1a1a1a;
+    --border: #eaeaea;
+  }
+
+  .dark {
+    --primary: #ce327f;
+
+    --background: #1a1a1a;
+    --text: #f5f5f5;
+    --border: #282828;
+  }
+}

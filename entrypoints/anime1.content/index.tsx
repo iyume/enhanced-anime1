@@ -1,4 +1,3 @@
-import { registerAnime1StorageEvent } from '@/libs/dom-utils'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './assets/tailwind.css'
@@ -30,14 +29,14 @@ export default defineContentScript({
           return
         }
 
-        registerAnime1StorageEvent()
+        // registerAnime1StorageEvent()
 
         const wrapper = document.createElement('div')
         wrapper.id = 'app-wrapper'
         container.append(wrapper)
 
         const root = ReactDOM.createRoot(wrapper)
-        root.render(<App />)
+        root.render(<App el={wrapper} />)
         return { root, wrapper }
       },
 

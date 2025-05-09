@@ -1,110 +1,56 @@
-import { cn } from '@/libs/utils'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import type React from 'react'
 
-export interface DrawerProps {
-  /**
-   * The content to display inside the drawer when expanded
-   */
+import { cn } from '@/libs/utils'
+import { useState } from 'react'
+
+interface HoverDrawerProps {
   children: React.ReactNode
-  /**
-   * The position of the drawer on the screen
-   * @default "right"
-   */
-  position?: 'left' | 'right'
-  /**
-   * The height of the drawer
-   * @default "300px"
-   */
-  height?: string
-  /**
-   * The width of the drawer when expanded
-   * @default "300px"
-   */
-  expandedWidth?: string
-  /**
-   * The width of the drawer when collapsed
-   * @default "30px"
-   */
-  collapsedWidth?: string
-  /**
-   * Additional CSS classes to apply to the drawer
-   */
-  className?: string
+  width?: number
+  icon: React.ReactNode
 }
 
-export function Drawer({
-  children,
-  position = 'right',
-  height = '300px',
-  expandedWidth = '300px',
-  collapsedWidth = '30px',
-  className,
-}: DrawerProps) {
-  const [isHovered, setIsHovered] = useState(false)
-  const drawerRef = useRef<HTMLDivElement>(null)
+export function Drawer({ children, width = 320, icon }: HoverDrawerProps) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [side, setSide] = useState<'left' | 'right'>('left')
 
-  // Handle clicks outside the drawer to close it
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (drawerRef.current && !drawerRef.current.contains(event.target as Node)) {
-        setIsHovered(false)
-      }
+  const translateValue = useMemo(() => {
+    if (side === 'left') {
+      return isOpen ? 0 : -width
     }
-
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+    else {
+      return isOpen ? 0 : width
     }
-  }, [])
-
-  // Calculate how much to translate the drawer
-  const translateValue
-    = position === 'left'
-      ? isHovered
-        ? '0'
-        : `calc(-100% + ${collapsedWidth})`
-      : isHovered
-        ? '0'
-        : `calc(100% - ${collapsedWidth})`
+  }, [isOpen, side, width])
 
   return (
-    <div
-      ref={drawerRef}
-      className={cn(
-        'fixed z-50 transition-transform duration-300 ease-in-out',
-        position === 'left' ? 'left-0' : 'right-0',
-        'top-1/2 -translate-y-1/2',
-        className,
-      )}
-      style={{
-        height,
-        width: expandedWidth,
-        transform: `translateX(${translateValue})`,
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <>
       <div
         className={cn(
-          'h-full w-full rounded-md shadow-lg overflow-hidden flex',
-          position === 'left' ? 'rounded-l-none' : 'rounded-r-none',
-          'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
+          'fixed top-1/4 -translate-y-1/2 transition-opacity duration-150 z-30 cursor-pointer',
+          side === 'left' ? 'left-0' : 'right-0',
+          isOpen ? 'opacity-0' : 'opacity-100',
         )}
+        onClick={() => setIsOpen(true)}
       >
-        {position === 'right' && (
-          <div className="flex items-center justify-center" style={{ width: collapsedWidth }}>
-            <ChevronRight className="h-5 w-5 text-gray-500" />
-          </div>
-        )}
-
-        <div className="flex-1 overflow-hidden">{children}</div>
-
-        {position === 'left' && (
-          <div className="flex items-center justify-center" style={{ width: collapsedWidth }}>
-            <ChevronLeft className="h-5 w-5 text-gray-500" />
-          </div>
-        )}
+        {icon}
       </div>
-    </div>
+      <div
+        className={cn(
+          'fixed top-1/2 -translate-y-1/2 z-40 bg-(--background) transition-transform',
+          side === 'left' ? 'left-0' : 'right-0',
+        )}
+        onMouseLeave={() => setIsOpen(false)}
+        style={
+          {
+            transform: `translateX(${translateValue}px)`,
+            width: `${width}px`,
+          }
+        }
+      >
+        <div className="h-screen">
+          {children}
+        </div>
+      </div>
+    </>
   )
 }
