@@ -10,7 +10,6 @@ export const ShadowRootProvider: FC<PropsWithChildren<{ state: {
   shadowRoot: ShadowRoot
   htmlElement: HTMLHtmlElement
 } }>> = ({ children, state }) => {
-  console.log('App root', state)
   return (
     <Context value={state}>
       {children}

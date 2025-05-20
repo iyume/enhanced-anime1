@@ -18,6 +18,8 @@ export default defineContentScript({
   cssInjectionMode: 'ui',
 
   async main(ctx) {
+    await injectScript('/inject.js', { keepInDom: true })
+
     const ui = await createShadowRootUi(ctx, {
       name: 'enhanced-anime1',
       position: 'inline',

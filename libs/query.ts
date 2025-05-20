@@ -14,6 +14,12 @@ export const queryClient = new QueryClient({
   },
 })
 
+export interface IAnime1RichEpisode extends StorageAnime1Episode {
+  episodeNumber: number | null
+  displayEpisodeNumber: string
+  progressPercent: number
+}
+
 export function useAnime1EpisodeQuery() {
   return useQuery({
     queryKey: ['anime1Episodes'],

@@ -34,13 +34,17 @@ export interface IAnime1Video {
   element: HTMLVideoElement
 }
 
-export function parseAnime1CategoryPage(): IAnime1CategoryInfo | null {
+interface Context {
+  categoryId?: string
+}
+
+export function parseAnime1CategoryPage(ctx?: Context): IAnime1CategoryInfo | null {
   const title = document.querySelector('.page-header h1.page-title')?.textContent
 
   const episodes: IAnime1Video[] = []
 
   document.querySelectorAll('article.post').forEach((article) => {
-    const episode = parseAnime1Article(article)
+    const episode = parseAnime1Article(article, ctx)
     if (!episode) {
       return
     }
@@ -55,27 +59,27 @@ export function parseAnime1CategoryPage(): IAnime1CategoryInfo | null {
   return { title, episodes }
 }
 
-export function parseAnime1ArticlePage(): IAnime1Video | null {
+export function parseAnime1ArticlePage(ctx?: Context): IAnime1Video | null {
   const article = document.querySelector('article.post')
   if (!article) {
     console.error('Failed to parse article page')
     return null
   }
-  return parseAnime1Article(article)
+  return parseAnime1Article(article, ctx)
 }
 
-function parseAnime1Article(article: Element): IAnime1Video | null {
+function parseAnime1Article(article: Element, ctx?: Context): IAnime1Video | null {
   const episodeId = article.id.replace('post-', '')
   if (!episodeId) {
     console.error('Episode ID not found for article:', article)
     return null
   }
-  const categoryId = Array.from(article.classList).find(className => className.startsWith('category-'))?.replace('category-', '')
+  const categoryId = ctx?.categoryId ?? Array.from(article.classList).find(className => className.startsWith('category-'))?.replace('category-', '')
   if (!categoryId) {
     console.error('Category ID not found for article:', article)
     return null
   }
-  const episodeTitleElement = article.querySelector('.entry-title a')
+  const episodeTitleElement = article.querySelector('.entry-title')
   const episodeTitle = episodeTitleElement?.textContent || 'Unknown Episode'
 
   // Parse video.js info

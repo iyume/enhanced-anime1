@@ -31,5 +31,13 @@ export default defineConfig({
     host_permissions: [
       'https://bangumi-token-exchanger.iyumelive.workers.dev/*',
     ],
+    web_accessible_resources: [
+      {
+        resources: ['inject.js'],
+        matches: [
+          '*://anime1.me/*',
+        ],
+      },
+    ],
   },
 })

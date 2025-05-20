@@ -31,3 +31,10 @@ export function launchWebAuthFlowAsync(url: string): Promise<string> {
     )
   })
 }
+
+export function setIfChanged<T>(prev: T[], value: T[], setter: React.Dispatch<React.SetStateAction<T[]>>) {
+  if (prev.length === value.length && prev.every((item, index) => item === value[index])) {
+    return
+  }
+  setter(value)
+}

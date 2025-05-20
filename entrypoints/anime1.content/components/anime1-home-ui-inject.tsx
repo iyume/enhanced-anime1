@@ -1,6 +1,9 @@
 import type { FC } from 'react'
 import { useAnime1EpisodeQuery } from '@/libs/query'
+import { setIfChanged } from '@/libs/utils'
 import _ from 'lodash'
+import { useEffectOnce } from '../hooks/common/useEffectOnce'
+import { useTraceUpdate } from '../hooks/common/useTraceUpdate'
 
 function useDocumentMutationObserver(callback: MutationCallback) {
   const [isEnabled, setIsEnabled] = useState(true)
@@ -52,7 +55,15 @@ function parseEpisodeFromTableCell(td: HTMLTableCellElement): number | null {
 
 export const Anime1HomeUIInject: FC = () => {
   const { data } = useAnime1EpisodeQuery()
+  const getHomeRows = () => Array.from(document.querySelectorAll('table tbody tr')) as HTMLTableRowElement[]
   const [episodeTrElements, setEpisodeTrElements] = useState<HTMLTableRowElement[]>([])
+
+  useEffectOnce(() => {
+    // Because the content script is injected after the page is loaded,
+    // the table rows maybe already rendered, so we need to get them manually
+    const elements = getHomeRows()
+    setIfChanged(episodeTrElements, elements, setEpisodeTrElements)
+  })
 
   useDocumentMutationObserver((mutations) => {
     // Skip changes for data-is-anime1-tracker
@@ -63,13 +74,10 @@ export const Anime1HomeUIInject: FC = () => {
     if (isAnime1Tracker) {
       return
     }
-    const elements = Array.from(document.querySelectorAll('table tbody tr')) as HTMLTableRowElement[]
+    const elements = getHomeRows()
     // Check if the elements are the same as before
     // Useful when the page is re-rendered (caused by viewport change)
-    if (elements.length === episodeTrElements.length && elements.every((el, index) => el === episodeTrElements[index])) {
-      return
-    }
-    setEpisodeTrElements(elements)
+    setIfChanged(episodeTrElements, elements, setEpisodeTrElements)
   })
 
   useEffect(() => {
