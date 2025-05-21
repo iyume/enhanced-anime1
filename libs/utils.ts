@@ -38,3 +38,12 @@ export function setIfChanged<T>(prev: T[], value: T[], setter: React.Dispatch<Re
   }
   setter(value)
 }
+
+export function injectCss(path: string) {
+  const style = document.createElement('link')
+  style.rel = 'stylesheet'
+  style.href = path
+  style.type = 'text/css'
+  document.head.appendChild(style)
+  return style
+}

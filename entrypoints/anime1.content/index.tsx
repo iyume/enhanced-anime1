@@ -1,3 +1,4 @@
+import { injectCss } from '@/libs/utils'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './assets/tailwind.css'
@@ -19,6 +20,7 @@ export default defineContentScript({
 
   async main(ctx) {
     await injectScript('/inject.js', { keepInDom: true })
+    injectCss(browser.runtime.getURL('/assets/anime1-main.css'))
 
     const ui = await createShadowRootUi(ctx, {
       name: 'enhanced-anime1',

@@ -2,7 +2,6 @@ import { getAnime1PageType } from '@/libs/anime1-site-parser'
 import { Anime1HomeUIInject } from './components/anime1-home-ui-inject'
 import { Anime1VideoProgressResumes } from './components/anime1-video-progress-resume'
 import { Anime1VideoWorkers } from './components/anime1-video-worker'
-import { DrawerIcon } from './components/drawer-icon'
 import { FloatingWidget } from './components/FloatingWidget'
 import { useAfterRerender } from './hooks/common/useAfterRerender'
 import { useAnime1Theme } from './providers/anime1-theme-provider'
@@ -38,7 +37,7 @@ function AppLayout() {
   const anime1Theme = useAnime1Theme()
 
   useEffect(() => {
-    // inject css variables
+    // Dynamically inject css variables
     const css = `
     :root {
       /* Anime1 primary color */
@@ -49,7 +48,7 @@ function AppLayout() {
       --border: ${anime1Theme === 'white' ? '#eaeaea' : '#282828'};
     }
     `
-    // find previous style tag
+    // Reuse previous style tag
     const id = 'injected-anime1-theme-css'
     let styleTag = document.getElementById(id) as HTMLStyleElement
     if (!styleTag) {
