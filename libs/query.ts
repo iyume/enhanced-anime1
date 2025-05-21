@@ -17,6 +17,7 @@ export const queryClient = new QueryClient({
 export interface IAnime1RichEpisode extends StorageAnime1Episode {
   episodeNumber: number | null
   displayEpisodeNumber: string
+  displayCurrentTime: string
   progressPercent: number
 }
 
@@ -34,6 +35,14 @@ export function useAnime1EpisodeQuery() {
           return episodeMatch ? Number.parseInt(episodeMatch[1], 10) : null
         })()
         const displayEpisodeNumber = `${episodeNumber ?? '剧场版'}`.padStart(2, '0')
+        const displayCurrentTime = ((): string => {
+          if (ep.currentTime && Number.isFinite(ep.currentTime)) {
+            const minutes = Math.floor(ep.currentTime / 60)
+            const seconds = Math.floor(ep.currentTime % 60)
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`
+          }
+          return '00:00'
+        })()
         const progressPercent = ((): number => {
           if (ep.duration && Number.isFinite(ep.duration)
             && ep.currentTime && Number.isFinite(ep.currentTime)
@@ -46,8 +55,9 @@ export function useAnime1EpisodeQuery() {
           ...ep,
           episodeNumber,
           displayEpisodeNumber,
+          displayCurrentTime,
           progressPercent,
-        }
+        } as IAnime1RichEpisode
       })
 
       return _.keyBy(richAnime1Episodes, 'id')
@@ -85,8 +95,8 @@ export function useAnime1EpisodeBatchUpdate() {
       await storageAnime1Episodes.setValue(Object.values(anime1EpisodesMap))
       return anime1EpisodesMap
     },
-    onSuccess(data) {
-      queryClient.setQueryData(['anime1Episodes'], data)
+    onSuccess() {
+      queryClient.invalidateQueries({ queryKey: ['anime1Episodes'] })
     },
   })
 }

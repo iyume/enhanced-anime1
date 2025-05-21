@@ -10,16 +10,10 @@ function createNotification(video: IAnime1Video, episode: IAnime1RichEpisode) {
   const notification = document.createElement('div')
   notification.className = 'anime1-video-notification'
 
-  // Create inner content with icon and text container for better layout
+  // Create inner content with progress indicator only
   notification.innerHTML = `
-    <div class="notification-icon">
-      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
-        <polygon points="5 3 19 12 5 21 5 3"></polygon>
-      </svg>
-    </div>
     <div class="notification-content">
-      <div class="notification-title">${episode.title}</div>
-      <div class="notification-info">Episode ${episode.displayEpisodeNumber} · ${episode.progressPercent}% complete</div>
+      <div class="notification-progress">上次观看到 ${episode.displayCurrentTime}</div>
     </div>
   `
 
@@ -33,7 +27,7 @@ function createNotification(video: IAnime1Video, episode: IAnime1RichEpisode) {
       background: rgba(0, 0, 0, 0.75);
       backdrop-filter: blur(8px);
       color: white;
-      padding: 12px 16px;
+      padding: 10px 14px;
       border-radius: 8px;
       z-index: 9999;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -47,31 +41,14 @@ function createNotification(video: IAnime1Video, episode: IAnime1RichEpisode) {
       border-left: 3px solid var(--primary);
       max-width: 320px;
     }
-    
-    .notification-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-right: 12px;
-      color: var(--primary);
-    }
-    
     .notification-content {
       display: flex;
       flex-direction: column;
     }
-    
-    .notification-title {
-      font-weight: 600;
-      margin-bottom: 2px;
+    .notification-progress {
+      font-weight: 500;
       font-size: 14px;
     }
-    
-    .notification-info {
-      font-size: 12px;
-      opacity: 0.8;
-    }
-    
     @keyframes fadeInNotification {
       0% {
         opacity: 0;
@@ -82,7 +59,6 @@ function createNotification(video: IAnime1Video, episode: IAnime1RichEpisode) {
         transform: translateY(0);
       }
     }
-    
     @keyframes fadeOutNotification {
       0% {
         opacity: 1;
@@ -110,10 +86,10 @@ function createNotification(video: IAnime1Video, episode: IAnime1RichEpisode) {
 
 const Anime1VideoProgressResume: FC<{ video: IAnime1Video, episode: IAnime1RichEpisode }> = ({ video, episode }) => {
   const played = useVideoFirstPlay(video.element)
+
   useEffect(() => {
-    if (played) {
-      video.element.currentTime = episode.currentTime
-      // Show notification around video element
+    if (played && episode.currentTime > 10) {
+      video.element.currentTime = episode.currentTime - 5
       createNotification(video, episode)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
