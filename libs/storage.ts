@@ -4,6 +4,7 @@ export interface StorageAnime1Episode {
   title: string
   currentTime: number
   duration: number
+  updatedAt: number
 }
 
 export const storageAnime1Episodes = storage.defineItem<StorageAnime1Episode[]>('local:Anime1Episodes', {

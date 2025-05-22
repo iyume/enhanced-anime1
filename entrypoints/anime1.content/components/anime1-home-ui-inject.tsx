@@ -3,7 +3,6 @@ import { useAnime1EpisodeQuery } from '@/libs/query'
 import { setIfChanged } from '@/libs/utils'
 import _ from 'lodash'
 import { useEffectOnce } from '../hooks/common/useEffectOnce'
-import { useTraceUpdate } from '../hooks/common/useTraceUpdate'
 
 function useDocumentMutationObserver(callback: MutationCallback) {
   const [isEnabled, setIsEnabled] = useState(true)
@@ -81,6 +80,9 @@ export const Anime1HomeUIInject: FC = () => {
   })
 
   useEffect(() => {
+    if (!episodeTrElements.length || !data) {
+      return
+    }
     console.log('Process', episodeTrElements)
     episodeTrElements.forEach((tr) => {
       const tdList = tr.querySelectorAll('td')
@@ -89,6 +91,7 @@ export const Anime1HomeUIInject: FC = () => {
       }
       const [titleTd, episodeTd, ..._rest] = tdList
       if (titleTd.children.length > 1) {
+        // Already processed
         return
       }
       const titleAnchor = titleTd.querySelector('a')
@@ -96,23 +99,25 @@ export const Anime1HomeUIInject: FC = () => {
         return
       }
       const categoryId = parseCategoryIdFromUrl(titleAnchor.href)
-      if (!categoryId) {
-        return
-      }
-      const episodes = data && Object.values(data).filter(episode => episode.categoryId === categoryId)
-      if (!episodes || !episodes.length) {
-        return
-      }
-      const lastEpisode = _.maxBy(episodes, e => e.episodeNumber)!
-
-      // Gray the text if the episode is seen
       const cellEpisode = parseEpisodeFromTableCell(episodeTd)
-      if (lastEpisode.episodeNumber !== null && cellEpisode !== null) {
-        if (cellEpisode <= lastEpisode.episodeNumber) {
-          tr.style.color = '#9ca3af'
-          titleAnchor.style.color = '#9ca3af'
-          tr.style.textDecoration = 'line-through'
-        }
+      if (!categoryId || cellEpisode === null) {
+        return
+      }
+      // 页面上只显示最新一集，当最新一集看过则置灰，再展示最后看的进度
+      const episodes = Object.values(data).filter(ep => ep.categoryId === categoryId)
+      const episode = episodes.find(ep => ep.episodeNumber === cellEpisode)
+      const lastWatchEpisode = _.maxBy(episodes, x => x.updatedAt)
+      if (!lastWatchEpisode) {
+        return
+      }
+
+      // TODO: handle 剧场版/特别篇 etc
+      // Gray the text if the episode is seen
+      if (episode && episode.isFinished) {
+        tr.style.color = '#9ca3af'
+        titleAnchor.style.color = '#9ca3af'
+        tr.style.textDecoration = 'line-through'
+        return
       }
 
       const progressBadge = document.createElement('span')
@@ -126,23 +131,24 @@ export const Anime1HomeUIInject: FC = () => {
         font-size: 0.8rem;
         font-weight: 500;
         border-radius: 12px;
-        background-color: #6366f1;
+        background-color: var(--primary);
         color: white;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         transition: all 0.2s ease;
+        cursor: pointer;
       `
-
-      const iconSpan = document.createElement('span')
-      iconSpan.textContent = '▶ '
-      iconSpan.style = `
-        font-size: 0.7rem;
-        margin-right: 4px;
+      progressBadge.innerHTML = `
+        <span style="font-size: 0.8rem;margin-right: 4px;">▶ </span>
+        <span>上次观看至 ${lastWatchEpisode.displayEpisodeNumber} 话 ${lastWatchEpisode.displayCurrentTime}</span>
       `
-      const textSpan = document.createElement('span')
-      textSpan.textContent = `${lastEpisode.displayEpisodeNumber} (${lastEpisode.progressPercent}%)`
+      const handleClick = () => {
+        const episodeUrl = `https://anime1.me/?cat=${categoryId}`
+        window.open(episodeUrl, '_self')
+      }
+      // There is no need to removeEventListener because anime1 cache the object
+      // eslint-disable-next-line react-web-api/no-leaked-event-listener
+      progressBadge.addEventListener('click', handleClick)
 
-      progressBadge.appendChild(iconSpan)
-      progressBadge.appendChild(textSpan)
       titleTd.appendChild(progressBadge)
     })
   }, [episodeTrElements, data])

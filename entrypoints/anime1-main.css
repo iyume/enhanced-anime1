@@ -1,3 +1,15 @@
+/* For main world */
+.post {
+  padding-bottom: 40px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid #27272a;
+}
+
+.post:last-of-type {
+  border-bottom: none;
+}
+
+/* For ui injects */
 .anime1-video-notification {
   position: absolute;
   bottom: 36px;

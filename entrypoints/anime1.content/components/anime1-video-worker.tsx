@@ -48,12 +48,14 @@ export const Anime1VideoWorkers: FC = memo(() => {
       const progress = videosProgress[video.id]
       if (!progress)
         return null
+      const updatedAt = Date.now()
       episodes.push({
         id: video.id,
         categoryId: video.categoryId,
         title: video.title,
         currentTime: progress.currentTime,
         duration: progress.duration,
+        updatedAt,
       })
     })
     trottledSyncAnime1Episodes(episodes)

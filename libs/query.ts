@@ -19,6 +19,7 @@ export interface IAnime1RichEpisode extends StorageAnime1Episode {
   displayEpisodeNumber: string
   displayCurrentTime: string
   progressPercent: number
+  isFinished: boolean
 }
 
 export function useAnime1EpisodeQuery() {
@@ -51,13 +52,23 @@ export function useAnime1EpisodeQuery() {
           }
           return Number.NaN
         })()
+        const isFinished = ((): boolean => {
+          if (ep.duration && Number.isFinite(ep.duration)
+            && ep.currentTime && Number.isFinite(ep.currentTime)
+          ) {
+            return ep.currentTime / ep.duration > 0.9
+          }
+          return false
+        })()
+
         return {
           ...ep,
           episodeNumber,
           displayEpisodeNumber,
           displayCurrentTime,
           progressPercent,
-        } as IAnime1RichEpisode
+          isFinished,
+        } satisfies IAnime1RichEpisode
       })
 
       return _.keyBy(richAnime1Episodes, 'id')
@@ -80,16 +91,6 @@ export function useAnime1EpisodeBatchUpdate() {
       const anime1Episodes = await storageAnime1Episodes.getValue()
       const anime1EpisodesMap = _.keyBy(anime1Episodes, 'id')
       batch.forEach((episode) => {
-        const oldEpisode = anime1EpisodesMap[episode.id]
-        // Store the latest watching time
-        if (
-          oldEpisode
-          && oldEpisode.title === episode.title
-          && oldEpisode.duration.toFixed(2) === episode.duration.toFixed(2)
-          && oldEpisode.currentTime >= episode.currentTime
-        ) {
-          return
-        }
         anime1EpisodesMap[episode.id] = episode
       })
       await storageAnime1Episodes.setValue(Object.values(anime1EpisodesMap))

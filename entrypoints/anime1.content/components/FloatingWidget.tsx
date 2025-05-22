@@ -79,7 +79,7 @@ export function FloatingWidget({ children }: React.PropsWithChildren) {
 
       {/* Floating Widget */}
       <motion.div
-        className="fixed flex items-center justify-center w-14 h-14 rounded-full bg-(--primary) text-(--text) shadow-lg cursor-grab active:cursor-grabbing pointer-events-auto z-40"
+        className="fixed flex items-center justify-center w-14 h-14 rounded-full bg-(--primary) text-white shadow-lg cursor-grab active:cursor-grabbing pointer-events-auto z-40"
         drag
         dragConstraints={constraintsRef}
         dragMomentum={false}
