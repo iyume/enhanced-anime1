@@ -33,7 +33,7 @@ export default defineConfig({
     ],
     web_accessible_resources: [
       {
-        resources: ['inject.js', 'assets/anime1-main.css'],
+        resources: ['inject.js', 'assets/anime1-main.css', 'icons/*.png'],
         matches: [
           '*://anime1.me/*',
         ],

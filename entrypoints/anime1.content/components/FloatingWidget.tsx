@@ -1,7 +1,8 @@
+import type { JSX } from 'react'
 import { MessageSquare } from 'lucide-react'
 import { AnimatePresence, motion, useMotionValue } from 'motion/react'
 
-export function FloatingWidget({ children }: React.PropsWithChildren) {
+export const FloatingWidget: React.FC<React.PropsWithChildren<{ icon?: JSX.Element }>> = ({ children, icon }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [drawerPosition, setDrawerPosition] = useState<'left' | 'right'>('right')
   const constraintsRef = useRef(null)
@@ -107,7 +108,7 @@ export function FloatingWidget({ children }: React.PropsWithChildren) {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <MessageSquare className="w-6 h-6" />
+        {icon ?? <MessageSquare className="w-6 h-6" />}
       </motion.div>
     </div>
   )

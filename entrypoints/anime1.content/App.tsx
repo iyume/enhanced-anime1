@@ -5,6 +5,7 @@ import { Anime1VideoProgressResumes } from './components/anime1-video-progress-r
 import { Anime1VideoStatusUI } from './components/anime1-video-status-ui'
 import { Anime1VideoWorkers } from './components/anime1-video-worker'
 import { FloatingWidget } from './components/FloatingWidget'
+import { Anime1Icon } from './components/icon/Anime1Icon'
 import { useAfterRerender } from './hooks/common/useAfterRerender'
 import { useAnime1Theme } from './providers/anime1-theme-provider'
 import { RootProviders } from './providers/root-providers'
@@ -46,7 +47,7 @@ function AppLayout() {
       --primary: ${anime1Theme === 'white' ? '#77cc6d' : '#ce327f'};
 
       --background: ${anime1Theme === 'white' ? '#f5f5f5' : '#1a1a1a'};
-      --text: ${anime1Theme === 'white' ? '#1a1a1a' : '#f5f5f5'};
+      --text: ${anime1Theme === 'white' ? '#3d3d3d' : '#e4e6eb'};
       --border: ${anime1Theme === 'white' ? '#e4e4e7' : '#27272a'};
     }
     `
@@ -79,7 +80,7 @@ function AppLayout() {
         && <Anime1HomeUIInject />
       }
 
-      <FloatingWidget>
+      <FloatingWidget icon={<Anime1Icon size="24px" color="#e4e6eb" />}>
         <div className="p-4">
           <button type="button" className="text-(--text)">
             测试
