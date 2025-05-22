@@ -22,3 +22,8 @@ export const storageBangumiToken = storage.defineItem<StorageBangumiToken | null
   version: 1,
   fallback: null,
 })
+
+export const storageWidgetPosition = storage.defineItem<{ x: number, y: number }>('local:WidgetPosition', {
+  version: 1,
+  fallback: { x: 0, y: 0 },
+})

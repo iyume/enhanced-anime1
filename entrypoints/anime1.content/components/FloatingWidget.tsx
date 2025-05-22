@@ -1,6 +1,9 @@
 import type { JSX } from 'react'
+import { storageWidgetPosition } from '@/libs/storage'
 import { MessageSquare } from 'lucide-react'
 import { AnimatePresence, motion, useMotionValue } from 'motion/react'
+import { useEffectOnce } from '../hooks/common/useEffectOnce'
+import { useUpdateEffect } from '../hooks/common/useUpdateEffect'
 
 export const FloatingWidget: React.FC<React.PropsWithChildren<{ icon?: JSX.Element }>> = ({ children, icon }) => {
   const [isOpen, setIsOpen] = useState(false)
@@ -15,7 +18,29 @@ export const FloatingWidget: React.FC<React.PropsWithChildren<{ icon?: JSX.Eleme
   // Scale on hover
   const scale = useMotionValue(1)
 
-  // Determine drawer position based on widget position
+  useEffectOnce(async () => {
+    const savedPosition = await storageWidgetPosition.getValue()
+    // Avoid exceeding the window bounds
+    const windowWidth = window.innerWidth
+    const windowHeight = window.innerHeight
+    const widgetSize = 56
+    const xPos = Math.min(Math.max(savedPosition.x, 0), windowWidth - widgetSize)
+    const yPos = Math.min(Math.max(savedPosition.y, 0), windowHeight - widgetSize)
+    x.set(xPos)
+    y.set(yPos)
+  })
+
+  useUpdateEffect(() => {
+    const savePosition = async () => {
+      const newPosition = { x: x.get(), y: y.get() }
+      await storageWidgetPosition.setValue(newPosition)
+    }
+
+    if (!isDragging) {
+      savePosition()
+    }
+  }, [isDragging])
+
   const updateDrawerPosition = () => {
     const xPos = x.get()
     const windowWidth = window.innerWidth
@@ -29,7 +54,6 @@ export const FloatingWidget: React.FC<React.PropsWithChildren<{ icon?: JSX.Eleme
     }
   }
 
-  // Handle click on widget
   const handleWidgetClick = () => {
     if (!isDragging) {
       updateDrawerPosition()
@@ -37,7 +61,6 @@ export const FloatingWidget: React.FC<React.PropsWithChildren<{ icon?: JSX.Eleme
     }
   }
 
-  // Close drawer
   const closeDrawer = () => {
     setIsOpen(false)
   }
