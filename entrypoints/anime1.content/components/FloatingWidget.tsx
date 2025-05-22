@@ -5,6 +5,7 @@ export function FloatingWidget({ children }: React.PropsWithChildren) {
   const [isOpen, setIsOpen] = useState(false)
   const [drawerPosition, setDrawerPosition] = useState<'left' | 'right'>('right')
   const constraintsRef = useRef(null)
+  const [isDragging, setIsDragging] = useState(false)
 
   // Motion values for drag
   const x = useMotionValue(0)
@@ -29,13 +30,28 @@ export function FloatingWidget({ children }: React.PropsWithChildren) {
 
   // Handle click on widget
   const handleWidgetClick = () => {
-    updateDrawerPosition()
-    setIsOpen(true)
+    if (!isDragging) {
+      updateDrawerPosition()
+      setIsOpen(true)
+    }
   }
 
   // Close drawer
   const closeDrawer = () => {
     setIsOpen(false)
+  }
+
+  const handleDragStart = () => {
+    setIsDragging(true)
+  }
+
+  const handleDragEnd = () => {
+    updateDrawerPosition()
+    // Use a small timeout to reset the dragging state
+    // This ensures the click handler won't fire immediately after drag
+    setTimeout(() => {
+      setIsDragging(false)
+    }, 100)
   }
 
   return (
@@ -88,7 +104,8 @@ export function FloatingWidget({ children }: React.PropsWithChildren) {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         onClick={handleWidgetClick}
-        onDragEnd={updateDrawerPosition}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
       >
         <MessageSquare className="w-6 h-6" />
       </motion.div>

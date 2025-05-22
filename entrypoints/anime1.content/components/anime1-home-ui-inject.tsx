@@ -121,9 +121,9 @@ export const Anime1HomeUIInject: FC = () => {
         return
       }
 
+      titleAnchor.style.marginRight = '8px'
       const progressBadge = document.createElement('span')
-      progressBadge.className = 'ext-badge'
-      progressBadge.style.marginLeft = '8px'
+      progressBadge.className = 'ext-badge ext-hover-shadow'
       progressBadge.innerHTML = `
         <span style="font-size: 0.8rem;margin-right: 4px;">▶ </span>
         <span>上次观看至 ${lastWatchEpisode.displayEpisodeNumber} 话 ${lastWatchEpisode.displayCurrentTime}</span>
