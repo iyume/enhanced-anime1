@@ -1,20 +1,26 @@
-import type { Anime1PageType, IAnime1Video } from '@/libs/anime1-site-parser'
+import type { Anime1PageType, IAnime1Post } from '@/libs/anime1-site-parser'
 import type { FC, PropsWithChildren } from 'react'
 import { getAnime1PageType, parseAnime1ArticlePage, parseAnime1CategoryPage } from '@/libs/anime1-site-parser'
 import { sendMainWorldMessage } from '@/libs/messaging'
 import { createContext, use } from 'react'
 import { useEffectOnce } from '../hooks/common/useEffectOnce'
 
-const Context = createContext<{ pageType: Anime1PageType, videos: IAnime1Video[] } | null>(null)
+interface IAnime1State {
+  pageType: Anime1PageType
+  // The video list, which is only available on the category page or episode page
+  posts: IAnime1Post[]
+}
+
+const Context = createContext<IAnime1State | null>(null)
 
 export const Anime1StateProvider: FC<PropsWithChildren> = ({ children }) => {
   const pageType = getAnime1PageType()
 
   // The video list initializer
-  const [videos, setVideos] = useState<IAnime1Video[] | null>(null)
+  const [posts, setPosts] = useState<IAnime1Post[] | null>(null)
 
   useEffectOnce(async () => {
-    let result: IAnime1Video[] | null = null
+    let result: IAnime1Post[] | null = null
     const categoryId = await sendMainWorldMessage('getCategoryId', undefined)
     if (pageType === 'category') {
       const parsed = parseAnime1CategoryPage({ categoryId })
@@ -24,10 +30,10 @@ export const Anime1StateProvider: FC<PropsWithChildren> = ({ children }) => {
       const parsed = parseAnime1ArticlePage({ categoryId })
       result = parsed && [parsed]
     }
-    setVideos(result)
+    setPosts(result)
   })
 
-  const state = useMemo(() => ({ pageType, videos: videos || [] }), [pageType, videos])
+  const state = useMemo(() => ({ pageType, posts: posts || [] }), [pageType, posts])
 
   console.log('Anime1StateProvider', state)
 

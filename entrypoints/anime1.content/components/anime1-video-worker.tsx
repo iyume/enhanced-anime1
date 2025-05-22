@@ -1,4 +1,4 @@
-import type { IAnime1Video } from '@/libs/anime1-site-parser'
+import type { IAnime1Post } from '@/libs/anime1-site-parser'
 import type { StorageAnime1Episode } from '@/libs/storage'
 import type { FC } from 'react'
 import { useAnime1EpisodeBatchUpdate } from '@/libs/query'
@@ -14,8 +14,8 @@ interface _Progress {
   duration: number
 }
 
-export const Anime1VideoWorker: FC<{ video: IAnime1Video, onProgressUpdate: (id: string, state: _Progress) => void }> = ({ video, onProgressUpdate }) => {
-  const videoState = useVideoProgress(video.element)
+export const Anime1VideoWorker: FC<{ video: IAnime1Post, onProgressUpdate: (id: string, state: _Progress) => void }> = ({ video, onProgressUpdate }) => {
+  const videoState = useVideoProgress(video.videoElement)
   // Only update when user interact with the video (not mounted)
   useUpdateEffect(() => {
     onProgressUpdate(video.id, videoState)
@@ -40,11 +40,11 @@ export const Anime1VideoWorkers: FC = memo(() => {
   }, [mutate])
 
   useEffect(() => {
-    if (!state.videos.length || !Object.keys(videosProgress).length) {
+    if (!state.posts.length || !Object.keys(videosProgress).length) {
       return
     }
     const episodes: StorageAnime1Episode[] = []
-    state.videos.forEach((video) => {
+    state.posts.forEach((video) => {
       const progress = videosProgress[video.id]
       if (!progress)
         return null
@@ -59,7 +59,7 @@ export const Anime1VideoWorkers: FC = memo(() => {
       })
     })
     trottledSyncAnime1Episodes(episodes)
-  }, [state.videos, videosProgress, trottledSyncAnime1Episodes])
+  }, [state.posts, videosProgress, trottledSyncAnime1Episodes])
 
   const handleProgressChange = useCallback((videoId: string, state: _Progress) => {
     setVideosProgress((prev) => {
@@ -71,7 +71,7 @@ export const Anime1VideoWorkers: FC = memo(() => {
   }, [])
 
   return (
-    state.videos.map(video => (
+    state.posts.map(video => (
       <Anime1VideoWorker
         key={video.id}
         video={video}

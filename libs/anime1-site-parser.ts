@@ -24,14 +24,15 @@ export function getAnime1PageType(): Anime1PageType {
 
 export interface IAnime1CategoryInfo {
   title: string
-  episodes: IAnime1Video[]
+  episodes: IAnime1Post[]
 }
 
-export interface IAnime1Video {
+export interface IAnime1Post {
   id: string
   categoryId: string
   title: string
-  element: HTMLVideoElement
+  articleElement: HTMLElement
+  videoElement: HTMLVideoElement
 }
 
 interface Context {
@@ -41,10 +42,10 @@ interface Context {
 export function parseAnime1CategoryPage(ctx?: Context): IAnime1CategoryInfo | null {
   const title = document.querySelector('.page-header h1.page-title')?.textContent
 
-  const episodes: IAnime1Video[] = []
+  const episodes: IAnime1Post[] = []
 
   document.querySelectorAll('article.post').forEach((article) => {
-    const episode = parseAnime1Article(article, ctx)
+    const episode = parseAnime1Article(article as HTMLElement, ctx)
     if (!episode) {
       return
     }
@@ -59,16 +60,16 @@ export function parseAnime1CategoryPage(ctx?: Context): IAnime1CategoryInfo | nu
   return { title, episodes }
 }
 
-export function parseAnime1ArticlePage(ctx?: Context): IAnime1Video | null {
+export function parseAnime1ArticlePage(ctx?: Context): IAnime1Post | null {
   const article = document.querySelector('article.post')
   if (!article) {
     console.error('Failed to parse article page')
     return null
   }
-  return parseAnime1Article(article, ctx)
+  return parseAnime1Article(article as HTMLElement, ctx)
 }
 
-function parseAnime1Article(article: Element, ctx?: Context): IAnime1Video | null {
+function parseAnime1Article(article: HTMLElement, ctx?: Context): IAnime1Post | null {
   const episodeId = article.id.replace('post-', '')
   if (!episodeId) {
     console.error('Episode ID not found for article:', article)
@@ -101,6 +102,7 @@ function parseAnime1Article(article: Element, ctx?: Context): IAnime1Video | nul
     id: episodeId,
     categoryId,
     title: episodeTitle,
-    element: videoElement,
+    articleElement: article,
+    videoElement,
   }
 }

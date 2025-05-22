@@ -37,6 +37,8 @@ const Anime1CategoryAutoScroll: FC = () => {
 
 export const Anime1CategoryControls: FC = () => {
   return (
-    <Anime1CategoryAutoScroll />
+    <>
+      <Anime1CategoryAutoScroll />
+    </>
   )
 }

@@ -114,6 +114,7 @@ export const Anime1HomeUIInject: FC = () => {
       // TODO: handle 剧场版/特别篇 etc
       // Gray the text if the episode is seen
       if (episode && episode.isFinished) {
+        // 这里是幂等的，暂时不用处理
         tr.style.color = '#9ca3af'
         titleAnchor.style.color = '#9ca3af'
         tr.style.textDecoration = 'line-through'
@@ -121,22 +122,8 @@ export const Anime1HomeUIInject: FC = () => {
       }
 
       const progressBadge = document.createElement('span')
-      progressBadge.dataset.isAnime1Tracker = 'true'
-      progressBadge.style = `
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 8px;
-        padding: 4px 8px;
-        font-size: 0.8rem;
-        font-weight: 500;
-        border-radius: 12px;
-        background-color: var(--primary);
-        color: white;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        transition: all 0.2s ease;
-        cursor: pointer;
-      `
+      progressBadge.className = 'ext-badge'
+      progressBadge.style.marginLeft = '8px'
       progressBadge.innerHTML = `
         <span style="font-size: 0.8rem;margin-right: 4px;">▶ </span>
         <span>上次观看至 ${lastWatchEpisode.displayEpisodeNumber} 话 ${lastWatchEpisode.displayCurrentTime}</span>

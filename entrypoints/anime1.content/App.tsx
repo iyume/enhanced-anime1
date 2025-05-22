@@ -2,6 +2,7 @@ import { getAnime1PageType } from '@/libs/anime1-site-parser'
 import { Anime1CategoryControls } from './components/anime1-category-controls'
 import { Anime1HomeUIInject } from './components/anime1-home-ui-inject'
 import { Anime1VideoProgressResumes } from './components/anime1-video-progress-resume'
+import { Anime1VideoStatusUI } from './components/anime1-video-status-ui'
 import { Anime1VideoWorkers } from './components/anime1-video-worker'
 import { FloatingWidget } from './components/FloatingWidget'
 import { useAfterRerender } from './hooks/common/useAfterRerender'
@@ -46,7 +47,7 @@ function AppLayout() {
 
       --background: ${anime1Theme === 'white' ? '#f5f5f5' : '#1a1a1a'};
       --text: ${anime1Theme === 'white' ? '#1a1a1a' : '#f5f5f5'};
-      --border: ${anime1Theme === 'white' ? '#eaeaea' : '#282828'};
+      --border: ${anime1Theme === 'white' ? '#e4e4e7' : '#27272a'};
     }
     `
     // Reuse previous style tag
@@ -68,6 +69,7 @@ function AppLayout() {
           <>
             <Anime1VideoWorkers />
             <Anime1VideoProgressResumes />
+            <Anime1VideoStatusUI />
           </>
         )
       }
