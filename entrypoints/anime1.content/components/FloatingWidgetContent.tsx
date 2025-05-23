@@ -3,6 +3,10 @@ import type { FC } from 'react'
 import { useAnime1EpisodeQuery } from '@/libs/query'
 import { cn } from '@/libs/utils'
 import clsx from 'clsx'
+import Tabs from './ui/tabs/Tabs'
+import TabsContent from './ui/tabs/TabsContent'
+import TabsList from './ui/tabs/TabsList'
+import TabsTrigger from './ui/tabs/TabsTrigger'
 
 const EpisodeCard: FC<{ episode: IAnime1RichEpisode }> = ({ episode }) => {
   const daysAgo = Math.floor((Date.now() - episode.updatedAt) / (1000 * 60 * 60 * 24))
@@ -55,15 +59,27 @@ const FloatWidgetContent: FC = () => {
   const { data } = useAnime1EpisodeQuery()
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8 bg-(--background) text-(--text)">
-      {Object.values(data ?? {}).map((episode) => {
-        return (
-          <div key={episode.id} className="w-full max-w-sm mb-4">
-            <EpisodeCard episode={episode} />
+    <div className="p-4 bg-(--background) text-(--text)">
+      <Tabs>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="history">观看历史</TabsTrigger>
+          <TabsTrigger value="category">番剧列表</TabsTrigger>
+        </TabsList>
+        <TabsContent value="history">
+          {/* TODO: scroll */}
+          <div>
+            {Object.values(data ?? {}).map((episode) => {
+              return (
+                <div key={episode.id} className="w-full max-w-sm mb-4">
+                  <EpisodeCard episode={episode} />
+                </div>
+              )
+            })}
           </div>
-        )
-      })}
-    </main>
+        </TabsContent>
+        <TabsContent value="category"></TabsContent>
+      </Tabs>
+    </div>
   )
 }
 
