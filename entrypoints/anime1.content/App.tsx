@@ -5,6 +5,7 @@ import { Anime1VideoProgressResumes } from './components/anime1-video-progress-r
 import { Anime1VideoStatusUI } from './components/anime1-video-status-ui'
 import { Anime1VideoWorkers } from './components/anime1-video-worker'
 import { FloatingWidget } from './components/FloatingWidget'
+import FloatWidgetContent from './components/FloatingWidgetContent'
 import { Anime1Icon } from './components/icon/Anime1Icon'
 import { useAfterRerender } from './hooks/common/useAfterRerender'
 import { useAnime1Theme } from './providers/anime1-theme-provider'
@@ -40,7 +41,7 @@ function AppLayout() {
   const anime1Theme = useAnime1Theme()
 
   useEffect(() => {
-    // Dynamically inject css variables
+    // Dynamically inject css variables into main world
     const css = `
     :root {
       /* Anime1 primary color */
@@ -81,18 +82,7 @@ function AppLayout() {
       }
 
       <FloatingWidget icon={<Anime1Icon size="24px" color="#e4e6eb" />}>
-        <div className="p-4">
-          <button type="button" className="text-(--text)">
-            测试
-          </button>
-          <button type="button" className="text-(--text)">
-            登录 Bangumi
-          </button>
-          <p>
-            页面类型：
-            {pageType}
-          </p>
-        </div>
+        <FloatWidgetContent />
       </FloatingWidget>
     </>
   )

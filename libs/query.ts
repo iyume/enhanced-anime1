@@ -18,8 +18,18 @@ export interface IAnime1RichEpisode extends StorageAnime1Episode {
   episodeNumber: number | null
   displayEpisodeNumber: string
   displayCurrentTime: string
+  displayDuration: string
   progressPercent: number
   isFinished: boolean
+}
+
+function getDisplayTime(time: number) {
+  if (time && Number.isFinite(time)) {
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
+  return '00:00'
 }
 
 export function useAnime1EpisodeQuery() {
@@ -36,14 +46,6 @@ export function useAnime1EpisodeQuery() {
           return episodeMatch ? Number.parseInt(episodeMatch[1], 10) : null
         })()
         const displayEpisodeNumber = `${episodeNumber ?? '剧场版'}`.padStart(2, '0')
-        const displayCurrentTime = ((): string => {
-          if (ep.currentTime && Number.isFinite(ep.currentTime)) {
-            const minutes = Math.floor(ep.currentTime / 60)
-            const seconds = Math.floor(ep.currentTime % 60)
-            return `${minutes}:${seconds.toString().padStart(2, '0')}`
-          }
-          return '00:00'
-        })()
         const progressPercent = ((): number => {
           if (ep.duration && Number.isFinite(ep.duration)
             && ep.currentTime && Number.isFinite(ep.currentTime)
@@ -65,7 +67,8 @@ export function useAnime1EpisodeQuery() {
           ...ep,
           episodeNumber,
           displayEpisodeNumber,
-          displayCurrentTime,
+          displayCurrentTime: getDisplayTime(ep.currentTime),
+          displayDuration: getDisplayTime(ep.duration),
           progressPercent,
           isFinished,
         } satisfies IAnime1RichEpisode
