@@ -17,6 +17,7 @@ export const queryClient = new QueryClient({
 export interface IAnime1RichEpisode extends StorageAnime1Episode {
   episodeNumber: number | null
   displayEpisodeNumber: string
+  categoryTitle: string
   displayCurrentTime: string
   displayDuration: string
   progressPercent: number
@@ -46,27 +47,28 @@ export function useAnime1EpisodeQuery() {
           return episodeMatch ? Number.parseInt(episodeMatch[1], 10) : null
         })()
         const displayEpisodeNumber = `${episodeNumber ?? '剧场版'}`.padStart(2, '0')
+        const categoryTitle = ((): string => {
+          // Remove [01] from title if exists
+          const categoryName = ep.title.trim().replace(/\s*\[\d+\]$/, '')
+          return categoryName
+        })()
         const progressPercent = ((): number => {
           if (ep.duration && Number.isFinite(ep.duration)
             && ep.currentTime && Number.isFinite(ep.currentTime)
           ) {
-            return Math.min(Math.round((ep.currentTime / ep.duration) * 100), 100)
+            return Math.min(Math.floor((ep.currentTime / ep.duration) * 100), 100)
           }
           return Number.NaN
         })()
         const isFinished = ((): boolean => {
-          if (ep.duration && Number.isFinite(ep.duration)
-            && ep.currentTime && Number.isFinite(ep.currentTime)
-          ) {
-            return ep.currentTime / ep.duration > 0.9
-          }
-          return false
+          return progressPercent >= 90
         })()
 
         return {
           ...ep,
           episodeNumber,
           displayEpisodeNumber,
+          categoryTitle,
           displayCurrentTime: getDisplayTime(ep.currentTime),
           displayDuration: getDisplayTime(ep.duration),
           progressPercent,
@@ -104,3 +106,13 @@ export function useAnime1EpisodeBatchUpdate() {
     },
   })
 }
+
+// 由于 anime1 的 json 并没有提供太多信息，这里就不用了
+// export function useAnime1() {
+//   return useQuery({
+//     queryKey: ['anime1'],
+//     queryFn: async () => {
+//       const response = await fetch('https://d1zquzjgwo9yb.cloudfront.net')
+//     },
+//   })
+// }

@@ -97,7 +97,7 @@ export const FloatingWidget: React.FC<React.PropsWithChildren<{ icon?: JSX.Eleme
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            className="fixed top-0 bottom-0 w-80 bg-(--background) shadow-lg pointer-events-auto z-50 overflow-y-auto"
+            className="fixed top-0 bottom-0 w-80 bg-(--background) shadow-lg pointer-events-auto z-50"
             initial={{
               x: drawerPosition === 'left' ? '-100%' : '100%',
             }}
