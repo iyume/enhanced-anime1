@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useAnime1EpisodeQuery } from '@/libs/query'
-import { setIfChanged } from '@/libs/utils'
+import { openAnime1CategoryPage, setIfChanged } from '@/libs/utils'
 import _ from 'lodash'
 import { useEffectOnce } from '../hooks/common/useEffectOnce'
 
@@ -129,8 +129,7 @@ export const Anime1HomeUIInject: FC = () => {
         <span>上次观看至 ${lastWatchEpisode.displayEpisodeNumber} 话 ${lastWatchEpisode.displayCurrentTime}</span>
       `
       const handleClick = () => {
-        const episodeUrl = `https://anime1.me/?cat=${categoryId}`
-        window.open(episodeUrl, '_self')
+        openAnime1CategoryPage(categoryId)
       }
       // There is no need to removeEventListener because anime1 cache the object
       // eslint-disable-next-line react-web-api/no-leaked-event-listener

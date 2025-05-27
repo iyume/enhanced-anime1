@@ -47,3 +47,9 @@ export function injectCss(path: string) {
   document.head.appendChild(style)
   return style
 }
+
+export function openAnime1CategoryPage(categoryId: string) {
+  const url = `https://anime1.me/?cat=${categoryId}`
+  // Open in a new tab
+  window.open(url, '_self')
+}

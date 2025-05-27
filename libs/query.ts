@@ -17,7 +17,7 @@ export const queryClient = new QueryClient({
 export interface IAnime1RichEpisode extends StorageAnime1Episode {
   episodeNumber: number | null
   displayEpisodeNumber: string
-  categoryTitle: string
+  categoryTitle: string // The parsed title, prefer to useAnime1Data
   displayCurrentTime: string
   displayDuration: string
   progressPercent: number
@@ -107,12 +107,73 @@ export function useAnime1EpisodeBatchUpdate() {
   })
 }
 
-// 由于 anime1 的 json 并没有提供太多信息，这里就不用了
-// export function useAnime1() {
-//   return useQuery({
-//     queryKey: ['anime1'],
-//     queryFn: async () => {
-//       const response = await fetch('https://d1zquzjgwo9yb.cloudfront.net')
-//     },
-//   })
-// }
+type Anime1DataRaw = [
+  number, // Identifier
+  string, // Title or <a href="...">Title</a>
+  string, // Status / Episode Count (e.g., "連載中(08)", "劇場版", "1-12", "1-12+OVA1-3")
+  string, // Year (e.g., "2025")
+  string, // Season (e.g., "春")
+  string, // Fansub Group (e.g., "桜都", "")
+][]
+
+export interface Anime1Category {
+  id: number
+  title: string
+  status: 'airing' | 'completed' | 'ova' | 'movie' | 'unknown'
+  parsedEpisode?: string // Only for airing
+  rawEpisode?: string // Only for completed
+  year: string
+  season: string
+  fansub: string
+}
+
+export function useAnime1CategoryQuery() {
+  return useQuery({
+    queryKey: ['anime1Category'],
+    queryFn: async () => {
+      const response = await fetch('https://d1zquzjgwo9yb.cloudfront.net')
+      if (!response.ok) {
+        throw new Error(`Failed to fetch anime1 data: ${response.statusText}`)
+      }
+      console.log('Fetching anime1 data...')
+      const data: Anime1DataRaw = await response.json()
+      return data.reduce((acc, [id, title, status, year, season, fansub]) => {
+        // Parse status & lastEpisode
+        let parsedStatus: 'airing' | 'completed' | 'ova' | 'movie' | 'unknown' = 'unknown'
+        let parsedEpisode: string | undefined
+        let rawEpisode: string | undefined
+        status = status.trim()
+        let match: RegExpMatchArray | null = null
+        // eslint-disable-next-line no-cond-assign
+        if (match = status.match(/連載中\((\d+)\)/)) {
+          parsedStatus = 'airing'
+          parsedEpisode = match[1]
+        }
+        else if (status === '劇場版') {
+          parsedStatus = 'movie'
+        }
+        // eslint-disable-next-line no-cond-assign
+        else if (match = status.match(/^(\d+-\d+)\+?/)) {
+          parsedStatus = 'completed'
+          rawEpisode = status
+        }
+        else if (status === 'OVA') {
+          parsedStatus = 'ova'
+        }
+        acc[id] = {
+          id,
+          title: title.replace(/<a href="[^"]+">([^<]+)<\/a>/, '$1'),
+          status: parsedStatus,
+          parsedEpisode,
+          rawEpisode,
+          year,
+          season,
+          fansub,
+        }
+        return acc
+      }, {} as Record<string, Anime1Category>)
+    },
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  })
+}

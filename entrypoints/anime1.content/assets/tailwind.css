@@ -4,6 +4,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
+  /*
+  For convenience, we use bg-(--color) forming for whole project.
+  https://tailwindcss.com/docs/adding-custom-styles#using-arbitrary-values
+  */
   :root {
     /* Anime1 primary color */
     --primary: hsl(114, 48%, 61%);

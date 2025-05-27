@@ -1,8 +1,9 @@
 import type { IAnime1RichEpisode } from '@/libs/query'
 import type { FC } from 'react'
-import { useAnime1EpisodeQuery } from '@/libs/query'
-import { cn } from '@/libs/utils'
+import { useAnime1CategoryQuery, useAnime1EpisodeQuery } from '@/libs/query'
+import { cn, openAnime1CategoryPage } from '@/libs/utils'
 import clsx from 'clsx'
+import Badge from './ui/badge'
 import Tabs from './ui/tabs/Tabs'
 import TabsContent from './ui/tabs/TabsContent'
 import TabsList from './ui/tabs/TabsList'
@@ -57,7 +58,6 @@ const EpisodeCard: FC<{ episode: IAnime1RichEpisode }> = ({ episode }) => {
 
 interface ICategory {
   id: string
-  title: string
   episodes: IAnime1RichEpisode[]
   updatedAt: number
 }
@@ -65,6 +65,9 @@ interface ICategory {
 const CategoryCard: FC<{ category: ICategory }> = ({ category }) => {
   const daysAgo = Math.floor((Date.now() - category.updatedAt) / (1000 * 60 * 60 * 24))
   const timeAgo = daysAgo === 0 ? '今天' : daysAgo === 1 ? '昨天' : `${daysAgo} 天前`
+  const { data } = useAnime1CategoryQuery()
+
+  const categoryDataSource = data?.[category.id]
 
   const sortedEpisodes = useMemo(() => {
     return [...category.episodes].sort((a, b) => {
@@ -75,9 +78,41 @@ const CategoryCard: FC<{ category: ICategory }> = ({ category }) => {
   }, [category.episodes])
 
   return (
-    <div className="p-3 rounded-md border bg-(--background) mb-4">
+    <div
+      className="p-3 rounded-md border bg-(--background) mb-4 cursor-pointer transition-colors hover:bg-(--muted)/20"
+      onClick={
+        () => openAnime1CategoryPage(category.id)
+      }
+    >
       <div className="mb-2">
-        <h3 className="font-medium text-base text-(--text) line-clamp-1">{category.title}</h3>
+        <h3 className="font-medium text-base text-(--text) line-clamp-1">{data?.[category.id]?.title ?? '...'}</h3>
+        <div className="flex flex-wrap mt-1 mb-1 gap-1">
+          {data
+            ? categoryDataSource
+              ? categoryDataSource.status === 'airing'
+                ? (
+                    <>
+                      <Badge variant="lime">连载中</Badge>
+                      {categoryDataSource.parsedEpisode && (
+                        <Badge variant="teal">
+                          更新至
+                          {' '}
+                          {categoryDataSource.parsedEpisode}
+                          {' '}
+                          话
+                        </Badge>
+                      )}
+                    </>
+                  )
+                : (
+                    <>
+                      <Badge variant="purple">已完结</Badge>
+                      {categoryDataSource.rawEpisode && <Badge variant="teal">{categoryDataSource.rawEpisode }</Badge>}
+                    </>
+                  )
+              : null // 找不到数据？
+            : (<p className="text-xs">加载中...</p>)}
+        </div>
         <div className="flex justify-between items-center mt-1 text-xs text-(--muted-text)">
           <p>
             看过
@@ -97,7 +132,7 @@ const CategoryCard: FC<{ category: ICategory }> = ({ category }) => {
           <div
             key={episode.id}
             className={clsx([
-              'aspect-square rounded border-2 flex items-center justify-center text-xs font-medium cursor-pointer transition-colors',
+              'aspect-square rounded border-2 flex items-center justify-center text-xs font-medium transition-colors',
               episode.isFinished
                 ? 'bg-(--primary) border-(--primary)/40 text-(--text-white)' // Finished
                 : episode.progressPercent > 0
@@ -137,10 +172,10 @@ const FloatWidgetContent: FC = () => {
     }, {} as Record<string, IAnime1RichEpisode[]>)
     const result = Object.entries(grouped).map(([categoryId, episodes]) => ({
       id: categoryId,
-      title: episodes[0].categoryTitle,
       episodes,
       updatedAt: Math.max(...episodes.map(ep => ep.updatedAt)),
     } satisfies ICategory))
+    // TODO: category filter
     result.sort((a, b) => b.updatedAt - a.updatedAt)
     return result
   }, [data])
@@ -149,9 +184,19 @@ const FloatWidgetContent: FC = () => {
     <div className="p-2 bg-(--background) text-(--text)">
       <Tabs className="flex flex-col h-[calc(100vh-1rem)]">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="history">观看历史</TabsTrigger>
           <TabsTrigger value="category">番剧列表</TabsTrigger>
+          <TabsTrigger value="history">观看历史</TabsTrigger>
         </TabsList>
+        <TabsContent value="category" className="flex-grow overflow-y-auto">
+          <div>
+            {categories.map(category => (
+              <CategoryCard
+                key={category.id}
+                category={category}
+              />
+            ))}
+          </div>
+        </TabsContent>
         <TabsContent value="history" className="flex-grow overflow-y-auto">
           <div>
             {episodes.map((episode) => {
@@ -161,16 +206,6 @@ const FloatWidgetContent: FC = () => {
                 </div>
               )
             })}
-          </div>
-        </TabsContent>
-        <TabsContent value="category" className="flex-grow overflow-y-auto">
-          <div>
-            {categories.map(category => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-              />
-            ))}
           </div>
         </TabsContent>
       </Tabs>

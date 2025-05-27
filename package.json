@@ -23,6 +23,7 @@
     "@types/lodash": "^4.17.16",
     "@webext-core/messaging": "^2.2.0",
     "@webext-core/proxy-service": "^1.2.1",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lodash": "^4.17.21",
     "lucide-react": "^0.508.0",
