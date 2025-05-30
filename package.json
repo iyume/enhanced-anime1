@@ -1,7 +1,7 @@
 {
   "name": "enhanced-anime1",
   "type": "module",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "description": "manifest.json description",
   "scripts": {

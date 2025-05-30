@@ -27,6 +27,7 @@ export default defineConfig({
     name: 'Enhanced Anime1',
     description:
       'Automatically tracks anime1.me viewing history and syncs watch progress to your bgm.tv (Bangumi) account.',
+    homepage_url: 'https://github.com/iyume/enhanced-anime1',
     permissions: ['storage', 'activeTab', 'scripting', 'identity'],
     host_permissions: [
       'https://bangumi-token-exchanger.iyumelive.workers.dev/*',
