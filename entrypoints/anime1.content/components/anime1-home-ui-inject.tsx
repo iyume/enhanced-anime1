@@ -1,7 +1,7 @@
 import type { FC } from 'react'
+import _ from 'lodash'
 import { useAnime1EpisodeQuery } from '@/libs/query'
 import { openAnime1CategoryPage, setIfChanged } from '@/libs/utils'
-import _ from 'lodash'
 import { useEffectOnce } from '../hooks/common/useEffectOnce'
 
 function useDocumentMutationObserver(callback: MutationCallback) {

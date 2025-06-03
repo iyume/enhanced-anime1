@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
-import { storageWidgetPosition } from '@/libs/storage'
 import { MessageSquare } from 'lucide-react'
 import { AnimatePresence, motion, useMotionValue } from 'motion/react'
+import { storageWidgetPosition } from '@/libs/storage'
 import { useEffectOnce } from '../hooks/common/useEffectOnce'
 import { useUpdateEffect } from '../hooks/common/useUpdateEffect'
 
