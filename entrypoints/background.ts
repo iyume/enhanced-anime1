@@ -1,5 +1,5 @@
-import { registerProxyService } from '@/services/ProxyService'
 import { registerBangumiService } from '@/services/bangumi/BangumiService'
+import { registerProxyService } from '@/services/ProxyService'
 
 export default defineBackground(() => {
   registerProxyService()

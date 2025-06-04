@@ -1,6 +1,6 @@
-import type { FC } from 'react'
 import type { IAnime1Post } from '@/libs/anime1-site-parser'
 import type { IAnime1RichEpisode } from '@/libs/query'
+import type { FC } from 'react'
 import { useAnime1EpisodeQuery } from '@/libs/query'
 import { useVideoFirstPlay } from '../hooks/useVideoFirstPlay'
 import { useAnime1State } from '../providers/anime1-state-provider'

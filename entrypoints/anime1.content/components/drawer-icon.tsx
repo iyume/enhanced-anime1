@@ -1,6 +1,4 @@
-import { X } from 'lucide-react'
 import bangumiIcon from '~/assets/bangumi-icon.png'
-import anime1Icon from '~/assets/icon.png'
 
 export function DrawerIcon({ className = '', iconSize = 24 }) {
   return (

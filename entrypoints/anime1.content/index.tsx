@@ -1,5 +1,5 @@
-import ReactDOM from 'react-dom/client'
 import { injectCss } from '@/libs/utils'
+import ReactDOM from 'react-dom/client'
 import App from './App'
 import './assets/tailwind.css'
 

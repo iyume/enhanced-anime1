@@ -6,4 +6,5 @@ export default antfu({
     html: true,
   },
   react: true,
+  ignores: ['libs/gen'],
 })

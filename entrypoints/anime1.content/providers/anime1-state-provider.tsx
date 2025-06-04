@@ -1,8 +1,8 @@
-import type { FC, PropsWithChildren } from 'react'
 import type { Anime1PageType, IAnime1Post } from '@/libs/anime1-site-parser'
-import { createContext, use } from 'react'
+import type { FC, PropsWithChildren } from 'react'
 import { getAnime1PageType, parseAnime1ArticlePage, parseAnime1CategoryPage } from '@/libs/anime1-site-parser'
 import { sendMainWorldMessage } from '@/libs/messaging'
+import { createContext, use } from 'react'
 import { useEffectOnce } from '../hooks/common/useEffectOnce'
 
 interface IAnime1State {
