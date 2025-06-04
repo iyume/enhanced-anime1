@@ -1,5 +1,5 @@
-import { queryClient } from '@/libs/query'
 import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from '@/libs/query'
 import { Anime1StateProvider } from './anime1-state-provider'
 import { Anime1ThemeProvider } from './anime1-theme-provider'
 
