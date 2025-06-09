@@ -19,6 +19,7 @@ export default defineContentScript({
   cssInjectionMode: 'ui',
 
   async main(ctx) {
+    // injectScript is done by document.head.append, so it doesn't require scripting permission
     await injectScript('/inject.js', { keepInDom: true })
     injectCss(browser.runtime.getURL('/assets/anime1-main.css'))
 
