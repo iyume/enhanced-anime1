@@ -40,5 +40,10 @@ export default defineConfig({
         ],
       },
     ],
+    browser_specific_settings: {
+      gecko: {
+        id: 'iyumelive@gmail.com', // UUID or email for Firefox
+      },
+    },
   },
 })

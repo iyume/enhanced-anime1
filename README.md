@@ -13,8 +13,8 @@
 
 ## 下载
 
-- Chrome: 插件地址
-- Firefox: 插件地址
+- Chrome: 插件地址（审核中）
+- Firefox: [插件地址](https://addons.mozilla.org/addon/enhanced-anime1/)
 
 ## TODO
 
