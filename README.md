@@ -13,7 +13,7 @@
 
 ## 下载
 
-- Chrome: 插件地址（审核中）
+- Chrome: [插件地址](https://chromewebstore.google.com/detail/enhanced-anime1/cdfnbkjlpcgegficlhoadndlppclljja)
 - Firefox: [插件地址](https://addons.mozilla.org/addon/enhanced-anime1/)
 
 ## TODO
