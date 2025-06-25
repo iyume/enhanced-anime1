@@ -43,11 +43,15 @@ function parseCategoryIdFromUrl(url: string): string {
   return ''
 }
 
-// Parse XXX(05)
+// Parse `XXX(05)` and `1-12`
 function parseEpisodeFromTableCell(td: HTMLTableCellElement): number | null {
-  const match = td.textContent?.match(/\((\d+)\)/)
+  let match = td.textContent?.match(/\((\d+)\)/)
   if (match) {
     return Number.parseInt(match[1])
+  }
+  match = td.textContent?.match(/^(\d+)-(\d+)\+?/)
+  if (match) {
+    return Number.parseInt(match[2])
   }
   return null
 }
@@ -99,26 +103,37 @@ export const Anime1HomeUIInject: FC = () => {
         return
       }
       const categoryId = parseCategoryIdFromUrl(titleAnchor.href)
-      const cellEpisode = parseEpisodeFromTableCell(episodeTd)
-      if (!categoryId || cellEpisode === null) {
+      if (!categoryId) {
         return
       }
       // 页面上只显示最新一集，当最新一集看过则置灰，再展示最后看的进度
       const episodes = Object.values(data).filter(ep => ep.categoryId === categoryId)
-      const episode = episodes.find(ep => ep.episodeNumber === cellEpisode)
       const lastWatchEpisode = _.maxBy(episodes, x => x.updatedAt)
       if (!lastWatchEpisode) {
         return
       }
 
-      // TODO: handle 剧场版/特别篇 etc
-      // Gray the text if the episode is seen
-      if (episode && episode.isFinished) {
+      const makeTableRowGray = () => {
         // 这里是幂等的，暂时不用处理
         tr.style.color = '#9ca3af'
         titleAnchor.style.color = '#9ca3af'
         tr.style.textDecoration = 'line-through'
-        return
+      }
+      // 如果当前集（最新一集或者最后一集）已经看完，则置灰
+      const cellEpisodeNumber = parseEpisodeFromTableCell(episodeTd)
+      if (cellEpisodeNumber !== null) {
+        const cellEpisode = episodes.find(ep => ep.episodeNumber === cellEpisodeNumber)
+        if (cellEpisode && cellEpisode.isFinished) {
+          makeTableRowGray()
+          return
+        }
+      }
+      if (episodeTd.textContent?.includes('劇場版')) {
+        const episode = episodes[0]
+        if (episode && episode.isFinished) {
+          makeTableRowGray()
+          return
+        }
       }
 
       titleAnchor.style.marginRight = '8px'
@@ -126,7 +141,7 @@ export const Anime1HomeUIInject: FC = () => {
       progressBadge.className = 'ext-badge ext-hover-shadow'
       progressBadge.innerHTML = `
         <span style="font-size: 0.8rem;margin-right: 4px;">▶ </span>
-        <span>上次观看至 ${lastWatchEpisode.displayEpisodeNumber} 话 ${lastWatchEpisode.displayCurrentTime}</span>
+        <span>上次观看至${lastWatchEpisode.displayEpisodeNumber !== '剧场版' ? ` ${lastWatchEpisode.displayEpisodeNumber} 话` : ''} ${lastWatchEpisode.displayCurrentTime}</span>
       `
       const handleClick = () => {
         openAnime1CategoryPage(categoryId)
