@@ -1,6 +1,6 @@
 import type { FC, PropsWithChildren } from 'react'
 import type { Anime1PageType, IAnime1Post } from '@/libs/anime1-site-parser'
-import { createContext, use } from 'react'
+import { createContext, use, useMemo, useState } from 'react'
 import { getAnime1PageType, parseAnime1ArticlePage, parseAnime1CategoryPage } from '@/libs/anime1-site-parser'
 import { sendMainWorldMessage } from '@/libs/messaging'
 import { useEffectOnce } from '../hooks/common/useEffectOnce'

@@ -31,6 +31,7 @@ export default defineConfig({
     permissions: ['storage', 'identity'],
     host_permissions: [
       'https://bangumi-token-exchanger.iyumelive.workers.dev/*',
+      'https://api.bgm.tv/*',
     ],
     web_accessible_resources: [
       {
