@@ -1,7 +1,6 @@
-// CDN can also be used to get all the anime data considering the package increased the build size significantly:
-// https://unpkg.com/bangumi-data@latest/dist/data.json
-// if CDN is used, add the url to the host_permissions
-import bangumiData from 'bangumi-data'
+const BANGUMI_DATA_URL = 'https://unpkg.com/bangumi-data@latest/dist/data.json'
+
+let cachedBangumiData: BangumiDataJson | null = null
 
 /**
  * Trim anime1 episode title to series title by removing episode number suffix like " [18]".
@@ -42,8 +41,15 @@ export interface BgmSubject {
   bangumi_url?: string
 }
 
-export function getBangumiData(): BangumiDataJson {
-  return bangumiData as BangumiDataJson
+export async function getBangumiData(): Promise<BangumiDataJson> {
+  if (cachedBangumiData) return cachedBangumiData
+  const res = await fetch(BANGUMI_DATA_URL)
+  if (!res.ok) {
+    throw new Error(`Failed to fetch bangumi-data: ${res.status} ${res.statusText}`)
+  }
+  const data = await res.json() as BangumiDataJson
+  cachedBangumiData = data
+  return data
 }
 
 /** Collect all possible title strings from an item for matching. */
@@ -95,7 +101,7 @@ export async function fetchBgmSubject(subjectId: string): Promise<BgmSubject> {
     throw new Error(`BGM API error: ${res.status} ${res.statusText} for ${url}`)
   }
   const data = await res.json()
-  const bangumiData = getBangumiData()
+  const bangumiData = await getBangumiData()
   const urlTemplate = bangumiData.siteMeta?.bangumi?.urlTemplate
   const bangumi_url = urlTemplate ? urlTemplate.replace('{{id}}', String(data.id)) : undefined
   return {
@@ -124,7 +130,7 @@ export async function resolveBgmSubjectBySeriesTitle(seriesTitle: string): Promi
 
   try {
     debug.step = 'getBangumiData'
-    const data = getBangumiData()
+    const data = await getBangumiData()
     debug.itemsCount = data.items?.length ?? 0
 
     const subjectId = findBangumiSubjectId(data.items ?? [], seriesTitle)
