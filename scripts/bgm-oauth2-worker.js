@@ -3,6 +3,88 @@
  */
 
 const BGM_AUTH_URL = 'https://bgm.tv/oauth/access_token'
+const BANGUMI_DATA_URL = 'https://unpkg.com/bangumi-data@latest/dist/data.json'
+const BANGUMI_DATA_TTL_MS = 24 * 60 * 60 * 1000 // 1 day
+
+// Response headers for GET /bangumi-data.
+const BANGUMI_DATA_RESPONSE_HEADERS = {
+  'Content-Type': 'application/json',
+}
+
+// In-memory storage for bangumi-data
+let bangumiDataMemory = null
+let bangumiDataCachedAt = 0 // epoch in milliseconds
+
+/** Match item title strings in Traditional Chinese, Simplified Chinese, or English (mirrors getItemTitles in bangumi-resolve.ts). */
+function getItemTitles(item) {
+  const titles = [item.title]
+  const tt = item.titleTranslate
+  if (tt) {
+    if (Array.isArray(tt['zh-Hans'])) titles.push(...tt['zh-Hans'])
+    if (Array.isArray(tt['zh-Hant'])) titles.push(...tt['zh-Hant'])
+    if (Array.isArray(tt.en)) titles.push(...tt.en)
+  }
+  return titles.map(t => String(t).trim()).filter(Boolean)
+}
+
+/**
+ * Find bangumi-data item by series title (mirrors findBangumiSubjectId in bangumi-resolve.ts).
+ */
+function findBangumiItem(items, seriesTitle) {
+  const normalizedSearch = seriesTitle.trim()
+  if (!normalizedSearch) return null
+
+  let lastExactMatch = null
+  let lastFuzzyMatch = null
+  for (const item of items) {
+    const titles = getItemTitles(item)
+    const exactMatch = titles.some(t => t === normalizedSearch)
+    const fuzzyMatch = !exactMatch && titles.some(
+      t => t.includes(normalizedSearch) || normalizedSearch.includes(t),
+    )
+    if (!exactMatch && !fuzzyMatch) continue
+
+    const site = item.sites?.find(s => s.site === 'bangumi')
+    if (!site?.id) continue
+    if (exactMatch) lastExactMatch = item
+    else lastFuzzyMatch = item
+  }
+  return lastExactMatch ?? lastFuzzyMatch
+}
+
+async function revalidateBangumiDataInMemory() {
+  try {
+    const res = await fetch(BANGUMI_DATA_URL)
+    if (!res.ok) return
+    const body = await res.json()
+    bangumiDataMemory = body
+    bangumiDataCachedAt = Date.now()
+  } catch (_) {
+    // ignore revalidate errors
+  }
+}
+
+/**
+ * Get bangumi-data JSON. Uses in-memory storage with 1-day TTL and stale-while-revalidate.
+ */
+async function getBangumiData(request, ctx) {
+  const now = Date.now()
+  const age = now - bangumiDataCachedAt
+  if (bangumiDataMemory !== null) {
+    if (age >= BANGUMI_DATA_TTL_MS) {
+      ctx.waitUntil(revalidateBangumiDataInMemory())
+    }
+    return bangumiDataMemory
+  }
+  const res = await fetch(BANGUMI_DATA_URL)
+  if (!res.ok) {
+    throw new Error(`bangumi-data fetch failed: ${res.status}`)
+  }
+  const body = await res.json()
+  bangumiDataMemory = body
+  bangumiDataCachedAt = now
+  return body
+}
 
 export default {
   async fetch(request, env, ctx) {
@@ -65,6 +147,41 @@ export default {
           'Cache-Control': 'no-cache',
         },
       })
+    }
+    
+    // GET /bangumi-data?subject=... — return best matching item in BangumiDataJson shape
+    if (request.method === 'GET' && url.pathname === '/bangumi-data') {
+      const subject = url.searchParams.get('subject')
+      if (subject === null || subject === undefined || String(subject).trim() === '') {
+        return new Response(JSON.stringify({ error: 'Missing or empty subject query' }), {
+          status: 400,
+          headers: BANGUMI_DATA_RESPONSE_HEADERS,
+        })
+      }
+      try {
+        const data = await getBangumiData(request, ctx)
+        const items = data.items ?? []
+        const item = findBangumiItem(items, subject)
+        if (!item) {
+          return new Response(JSON.stringify({ error: 'No matching bangumi-data item' }), {
+            status: 404,
+            headers: BANGUMI_DATA_RESPONSE_HEADERS,
+          })
+        }
+        const payload = {
+          siteMeta: data.siteMeta?.bangumi != null ? { bangumi: data.siteMeta.bangumi } : undefined,
+          items: [item],
+        }
+        return new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: BANGUMI_DATA_RESPONSE_HEADERS,
+        })
+      } catch (err) {
+        return new Response(JSON.stringify({ error: err?.message ?? 'Failed to load bangumi-data' }), {
+          status: 500,
+          headers: BANGUMI_DATA_RESPONSE_HEADERS,
+        })
+      }
     }
 
     if (request.method !== 'POST')

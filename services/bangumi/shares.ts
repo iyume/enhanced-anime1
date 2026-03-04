@@ -25,8 +25,8 @@ export enum EpisodeCollectionType {
   Dropped = 3,
 }
 
-export const WXT_BGM_OAUTH2_WORKER_URL = import.meta.env.WXT_BGM_OAUTH2_WORKER_URL
-if (!WXT_BGM_OAUTH2_WORKER_URL) {
+export const WXT_WORKER_URL = import.meta.env.WXT_WORKER_URL
+if (!WXT_WORKER_URL) {
   throw new Error('Bangumi OAuth2 worker URL is not configured')
 }
 export const WXT_BGM_APP_ID = import.meta.env.WXT_BGM_APP_ID
@@ -37,7 +37,7 @@ if (!WXT_BGM_APP_ID) {
 export async function exchangeCode(code: string): Promise<BangumiOAuthResponse> {
   // Must ensure the worker URL is added to host_permissions, otherwise
   // the request will be blocked by CORS
-  const response = await fetch(WXT_BGM_OAUTH2_WORKER_URL, {
+  const response = await fetch(WXT_WORKER_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
