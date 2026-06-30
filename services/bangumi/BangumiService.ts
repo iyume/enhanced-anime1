@@ -5,20 +5,51 @@ import type { EpisodeCollectionType } from './shares'
 import { defineProxyService } from '@webext-core/proxy-service'
 import createFetchClient from 'openapi-fetch'
 import { BangumiSession } from './BangumiSession'
+import { WXT_WORKER_URL } from './shares'
+
+// Bangumi Info Card Interfaces
+
+export interface BangumiDataSite {
+  site: string
+  id: string
+}
+
+export interface BangumiDataItem {
+  title: string
+  titleTranslate?: Record<string, string[]>
+  sites: BangumiDataSite[]
+}
+
+export interface BangumiDataJson {
+  siteMeta?: {
+    bangumi?: {
+      title?: string
+      urlTemplate?: string
+      type?: string
+    }
+  }
+  items: BangumiDataItem[]
+}
+
+export interface BgmSubject {
+  id: number
+  name: string
+  name_cn: string
+  summary: string
+  images: { common: string }
+  tags: Array<{ name: string, count?: number }>
+  /** Subject page URL from siteMeta.bangumi.urlTemplate with '{{id}}' replaced by actual subject id. */
+  bangumi_url?: string
+}
 
 const BGM_API_BASE = 'https://api.bgm.tv'
-
-const WXT_WORKER_URL = import.meta.env.WXT_WORKER_URL
-if (!WXT_WORKER_URL) {
-  throw new Error('BangumiService: WXT_WORKER_URL is not configured')
-}
 
 const fetchClient = createFetchClient<paths>({
   baseUrl: BGM_API_BASE,
 })
 fetchClient.use({
   onRequest: ({ request }) => {
-    // Thinking: how to get the token from the background script without  sharing the react state?
+    // Thinking: how to get the token from the background script without sharing the react state?
 
     // If the session is valid, set the authorization header
     if (BangumiSession.session) {
@@ -87,32 +118,10 @@ class BangumiService {
     return BangumiSession.valid
   }
 
-  // Bangumi Info Card
-  // Fetching from bangumi-data worker to get subject id using matching anime title and then fetch anime details from BGM API using the subject id 
-
-  async fetchBgmSubject(subjectId: string, urlTemplate?: string): Promise<BgmSubject> {
-    const subjectIdNum = Number(subjectId)
-    const response = await fetchClient.GET('/v0/subjects/{subject_id}', {
-      params: { path: { subject_id: subjectIdNum } },
-    })
-    const data = response.data
-    if (data == null || typeof data !== 'object') {
-      const res = response.response
-      const msg = response.error ?? (res ? `${res.status} ${res.statusText}` : 'No data')
-      throw new Error(`[BangumiService] BGM API error: ${msg} for /v0/subjects/${subjectId}`)
-    }
-    const bangumi_url = urlTemplate ? urlTemplate.replace('{{id}}', String(data.id)) : undefined
-    return {
-      id: data.id,
-      name: data.name ?? '',
-      name_cn: data.name_cn ?? '',
-      summary: data.summary ?? '',
-      images: data.images ?? { common: '' },
-      tags: Array.isArray(data.tags) ? data.tags : [],
-      bangumi_url,
-    }
-  }
-
+  /**
+   * Resolve a BGM subject by matching the series title against bangumi-data,
+   * then fetching full subject details from the BGM API.
+   */
   async resolveBgmSubjectBySeriesTitle(seriesTitle: string): Promise<{
     subject: BgmSubject
     debug: Record<string, unknown>
@@ -163,42 +172,30 @@ class BangumiService {
       return null
     }
   }
+
+  private async fetchBgmSubject(subjectId: string, urlTemplate?: string): Promise<BgmSubject> {
+    const subjectIdNum = Number(subjectId)
+    const response = await fetchClient.GET('/v0/subjects/{subject_id}', {
+      params: { path: { subject_id: subjectIdNum } },
+    })
+    const data = response.data
+    if (data == null || typeof data !== 'object') {
+      const res = response.response
+      const msg = response.error ?? (res ? `${res.status} ${res.statusText}` : 'No data')
+      throw new Error(`[BangumiService] BGM API error: ${msg} for /v0/subjects/${subjectId}`)
+    }
+    const bangumi_url = urlTemplate ? urlTemplate.replaceAll('{{id}}', String(data.id)) : undefined
+    return {
+      id: data.id,
+      name: data.name ?? '',
+      name_cn: data.name_cn ?? '',
+      summary: data.summary ?? '',
+      images: data.images ?? { common: '' },
+      tags: Array.isArray(data.tags) ? data.tags : [],
+      bangumi_url,
+    }
+  }
 }
 
 export const [registerBangumiService, getBangumiService]
   = defineProxyService('BangumiService', () => new BangumiService(), { logger: console })
-
-// Bangumi Info Card Interfaces
-
-export interface BangumiDataSite {
-  site: string
-  id: string
-}
-
-export interface BangumiDataItem {
-  title: string
-  titleTranslate?: Record<string, string[]>
-  sites: BangumiDataSite[]
-}
-
-export interface BangumiDataJson {
-  siteMeta?: {
-    bangumi?: {
-      title?: string
-      urlTemplate?: string
-      type?: string
-    }
-  }
-  items: BangumiDataItem[]
-}
-
-export interface BgmSubject {
-  id: number
-  name: string
-  name_cn: string
-  summary: string
-  images: { common: string }
-  tags: Array<{ name: string; count?: number }>
-  /** Subject page URL from siteMeta.bangumi.urlTemplate with '{{id}}' replaced by actual subject id. */
-  bangumi_url?: string
-}

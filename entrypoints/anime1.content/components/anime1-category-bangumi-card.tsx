@@ -1,10 +1,10 @@
-import React, { type FC } from 'react'
+import type { CSSProperties, FC } from 'react'
 import type { BgmSubject } from '@/services/bangumi/BangumiService'
-import { bangumiService } from '../services'
-import { useAnime1CategoryQuery } from '@/libs/query'
-import { useAnime1State } from '../providers/anime1-state-provider'
 import { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom/client'
+import { useAnime1CategoryQuery } from '@/libs/query'
+import { useAnime1State } from '../providers/anime1-state-provider'
+import { bangumiService } from '../services'
 
 const BANGUMI_CARD_CONTAINER_ID = 'enhanced-anime1-bangumi-card'
 
@@ -24,7 +24,6 @@ const cardStyles = {
   },
   image: {
     width: 'auto',
-    //maxWidth: '60%',
     height: 'auto',
     maxHeight: '328px',
     objectFit: 'cover' as const,
@@ -58,7 +57,7 @@ const cardStyles = {
     overflow: 'hidden',
     display: '-webkit-box',
     WebkitLineClamp: 5,
-    WebkitBoxOrient: 'vertical' as React.CSSProperties['WebkitBoxOrient'],
+    WebkitBoxOrient: 'vertical' as CSSProperties['WebkitBoxOrient'],
   },
   tagsWrap: {
     display: 'flex',
@@ -79,25 +78,35 @@ const cardStyles = {
   },
 } as const
 
+const CoverImage: FC<{ subject: BgmSubject }> = ({ subject }) => {
+  if (!subject.images?.common)
+    return null
+
+  const img = (
+    <img
+      src={subject.images.common}
+      alt={subject.name_cn || subject.name}
+      style={cardStyles.image}
+    />
+  )
+
+  if (!subject.bangumi_url)
+    return img
+
+  return (
+    <a href={subject.bangumi_url} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
+      {img}
+    </a>
+  )
+}
+
 const BangumiCardContent: FC<{ subject: BgmSubject }> = ({ subject }) => {
-  const topTags = subject.tags.slice(0, 15) // only show 15 tags
+  const topTags = subject.tags.slice(0, 15)
   const summary = (subject.summary || '').replace(/\r\n/g, '\n').trim()
 
   return (
     <div style={cardStyles.card}>
-      {subject.images?.common
-        ? (
-            subject.bangumi_url
-              ? (
-                  <a href={subject.bangumi_url} target="_blank" rel="noopener noreferrer" style={{ display: 'block' }}>
-                    <img src={subject.images.common} alt="" style={cardStyles.image} />
-                  </a>
-                )
-              : (
-                  <img src={subject.images.common} alt="" style={cardStyles.image} />
-                )
-          )
-        : null}
+      <CoverImage subject={subject} />
       <div style={cardStyles.content}>
         <h2 style={cardStyles.name}>{subject.name}</h2>
         {subject.name_cn ? <p style={cardStyles.nameCn}>{subject.name_cn}</p> : null}
@@ -108,7 +117,10 @@ const BangumiCardContent: FC<{ subject: BgmSubject }> = ({ subject }) => {
             <span key={tag.name} style={cardStyles.tag}>
               {tag.name}
               {tag.count != null && (
-                <small style={cardStyles.tagCount}> {tag.count}</small>
+                <small style={cardStyles.tagCount}>
+                  {' '}
+                  {tag.count}
+                </small>
               )}
             </span>
           ))}
@@ -121,10 +133,11 @@ const BangumiCardContent: FC<{ subject: BgmSubject }> = ({ subject }) => {
 export const Anime1CategoryBangumiCard: FC = () => {
   const { posts } = useAnime1State()
   const { data: categoryData } = useAnime1CategoryQuery()
-  const injectedRef = useRef<{ container: HTMLElement; root: ReturnType<typeof ReactDOM.createRoot> } | null>(null)
+  const injectedRef = useRef<{ container: HTMLElement, root: ReturnType<typeof ReactDOM.createRoot> } | null>(null)
 
   useEffect(() => {
-    if (!posts.length || !categoryData) return
+    if (!posts.length || !categoryData)
+      return
 
     const category = categoryData[posts[0].categoryId]
     const seriesTitle = category?.title?.trim()
@@ -141,15 +154,20 @@ export const Anime1CategoryBangumiCard: FC = () => {
 
     let cancelled = false
 
-    void bangumiService.resolveBgmSubjectBySeriesTitle(seriesTitle).then((result) => {
-      if (cancelled) return
-      if (!result) return
+    ;(async () => {
+      const result = await bangumiService.resolveBgmSubjectBySeriesTitle(seriesTitle)
+      if (cancelled)
+        return
+      if (!result)
+        return
 
       const { subject, debug } = result
+      // eslint-disable-next-line no-console
       console.log('[enhanced-anime1] Bangumi card: inject success', debug)
 
       const existing = document.getElementById(BANGUMI_CARD_CONTAINER_ID)
-      if (existing) existing.remove()
+      if (existing)
+        existing.remove()
 
       const container = document.createElement('div')
       container.id = BANGUMI_CARD_CONTAINER_ID
@@ -158,7 +176,7 @@ export const Anime1CategoryBangumiCard: FC = () => {
       const root = ReactDOM.createRoot(container)
       root.render(<BangumiCardContent subject={subject} />)
       injectedRef.current = { container, root }
-    })
+    })()
 
     return () => {
       cancelled = true

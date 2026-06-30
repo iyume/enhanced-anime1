@@ -13,7 +13,6 @@ stats.html
 stats-*.json
 .wxt
 web-ext.config.ts
-package-lock.json
 
 # Editor directories and files
 .idea

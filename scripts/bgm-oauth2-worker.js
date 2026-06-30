@@ -14,53 +14,69 @@ const BANGUMI_DATA_RESPONSE_HEADERS = {
 // In-memory storage for bangumi-data
 let bangumiDataMemory = null
 let bangumiDataCachedAt = 0 // epoch in milliseconds
+let bangumiDataRevalidating = false
 
-/** Match item title strings in Traditional Chinese, Simplified Chinese, or English (mirrors getItemTitles in bangumi-resolve.ts). */
+/** Match item title strings in Traditional Chinese, Simplified Chinese, or English. */
 function getItemTitles(item) {
   const titles = [item.title]
   const tt = item.titleTranslate
   if (tt) {
-    if (Array.isArray(tt['zh-Hans'])) titles.push(...tt['zh-Hans'])
-    if (Array.isArray(tt['zh-Hant'])) titles.push(...tt['zh-Hant'])
-    if (Array.isArray(tt.en)) titles.push(...tt.en)
+    if (Array.isArray(tt['zh-Hans']))
+      titles.push(...tt['zh-Hans'])
+    if (Array.isArray(tt['zh-Hant']))
+      titles.push(...tt['zh-Hant'])
+    if (Array.isArray(tt.en))
+      titles.push(...tt.en)
   }
   return titles.map(t => String(t).trim()).filter(Boolean)
 }
 
 /**
- * Find bangumi-data item by series title (mirrors findBangumiSubjectId in bangumi-resolve.ts).
+ * Find bangumi-data item by series title.
  */
 function findBangumiItem(items, seriesTitle) {
   const normalizedSearch = seriesTitle.trim()
-  if (!normalizedSearch) return null
+  if (!normalizedSearch)
+    return null
 
   let lastExactMatch = null
   let lastFuzzyMatch = null
   for (const item of items) {
     const titles = getItemTitles(item)
-    const exactMatch = titles.some(t => t === normalizedSearch)
+    const exactMatch = titles.includes(normalizedSearch)
     const fuzzyMatch = !exactMatch && titles.some(
       t => t.includes(normalizedSearch) || normalizedSearch.includes(t),
     )
-    if (!exactMatch && !fuzzyMatch) continue
+    if (!exactMatch && !fuzzyMatch)
+      continue
 
     const site = item.sites?.find(s => s.site === 'bangumi')
-    if (!site?.id) continue
-    if (exactMatch) lastExactMatch = item
+    if (!site?.id)
+      continue
+    if (exactMatch)
+      lastExactMatch = item
     else lastFuzzyMatch = item
   }
   return lastExactMatch ?? lastFuzzyMatch
 }
 
 async function revalidateBangumiDataInMemory() {
+  if (bangumiDataRevalidating)
+    return
+  bangumiDataRevalidating = true
   try {
     const res = await fetch(BANGUMI_DATA_URL)
-    if (!res.ok) return
+    if (!res.ok)
+      return
     const body = await res.json()
     bangumiDataMemory = body
     bangumiDataCachedAt = Date.now()
-  } catch (_) {
+  }
+  catch {
     // ignore revalidate errors
+  }
+  finally {
+    bangumiDataRevalidating = false
   }
 }
 
@@ -148,11 +164,11 @@ export default {
         },
       })
     }
-    
+
     // GET /bangumi-data?subject=... — return best matching item in BangumiDataJson shape
     if (request.method === 'GET' && url.pathname === '/bangumi-data') {
       const subject = url.searchParams.get('subject')
-      if (subject === null || subject === undefined || String(subject).trim() === '') {
+      if (!subject?.trim()) {
         return new Response(JSON.stringify({ error: 'Missing or empty subject query' }), {
           status: 400,
           headers: BANGUMI_DATA_RESPONSE_HEADERS,
@@ -176,7 +192,8 @@ export default {
           status: 200,
           headers: BANGUMI_DATA_RESPONSE_HEADERS,
         })
-      } catch (err) {
+      }
+      catch (err) {
         return new Response(JSON.stringify({ error: err?.message ?? 'Failed to load bangumi-data' }), {
           status: 500,
           headers: BANGUMI_DATA_RESPONSE_HEADERS,
