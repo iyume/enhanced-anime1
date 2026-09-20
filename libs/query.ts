@@ -54,8 +54,7 @@ export function useAnime1EpisodeQuery() {
         })()
         const progressPercent = ((): number => {
           if (ep.duration && Number.isFinite(ep.duration)
-            && ep.currentTime && Number.isFinite(ep.currentTime)
-          ) {
+            && ep.currentTime && Number.isFinite(ep.currentTime)) {
             return Math.min(Math.floor((ep.currentTime / ep.duration) * 100), 100)
           }
           return Number.NaN
@@ -131,7 +130,7 @@ export function useAnime1CategoryQuery() {
   return useQuery({
     queryKey: ['anime1Category'],
     queryFn: async () => {
-      const response = await fetch('https://d1zquzjgwo9yb.cloudfront.net')
+      const response = await fetch('https://anime1.me/animelist.json')
       if (!response.ok) {
         throw new Error(`Failed to fetch anime1 data: ${response.statusText}`)
       }
