@@ -3,6 +3,7 @@ import type { IAnime1RichEpisode } from '@/libs/query'
 import clsx from 'clsx'
 import { useAnime1CategoryQuery, useAnime1EpisodeQuery } from '@/libs/query'
 import { cn, openAnime1CategoryPage } from '@/libs/utils'
+import { Anime1DataPanel } from './anime1-data-panel'
 import Badge from './ui/badge'
 import Tabs from './ui/tabs/Tabs'
 import TabsContent from './ui/tabs/TabsContent'
@@ -183,9 +184,10 @@ const FloatWidgetContent: FC = () => {
   return (
     <div className="p-2 bg-(--background) text-(--text)">
       <Tabs className="flex flex-col h-[calc(100vh-1rem)]">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="category">番剧列表</TabsTrigger>
           <TabsTrigger value="history">观看历史</TabsTrigger>
+          <TabsTrigger value="data">数据</TabsTrigger>
         </TabsList>
         <TabsContent value="category" className="flex-grow overflow-y-auto">
           <div>
@@ -207,6 +209,9 @@ const FloatWidgetContent: FC = () => {
               )
             })}
           </div>
+        </TabsContent>
+        <TabsContent value="data" className="flex-grow overflow-y-auto">
+          <Anime1DataPanel />
         </TabsContent>
       </Tabs>
     </div>

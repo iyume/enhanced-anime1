@@ -48,6 +48,21 @@ export function injectCss(path: string) {
   return style
 }
 
+export function downloadJsonFile(filename: string, data: unknown) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = filename
+  anchor.style.display = 'none'
+  // Firefox only triggers the download for anchors attached to the document
+  document.body.append(anchor)
+  anchor.click()
+  anchor.remove()
+  // Give the browser a moment to start the download before releasing the blob
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 export function openAnime1CategoryPage(categoryId: string) {
   const url = `https://anime1.me/?cat=${categoryId}`
   // Open in a new tab
