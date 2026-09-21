@@ -1,9 +1,7 @@
-import type { StorageAnime1Episode } from './storage'
+import type { StorageAnime1Category, StorageAnime1Episode } from './storage'
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import _ from 'lodash'
-import { storageAnime1Episodes } from './storage'
-
-const DO_NOT_RETRY_CODES = new Set([400, 401, 403, 404, 422])
+import { storageAnime1Categories, storageAnime1Episodes } from './storage'
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +20,19 @@ export interface IAnime1RichEpisode extends StorageAnime1Episode {
   displayDuration: string
   progressPercent: number
   isFinished: boolean
+}
+
+const FINISHED_PROGRESS_PERCENT = 90
+
+function computeProgressPercent(
+  episode: Pick<StorageAnime1Episode, 'currentTime' | 'duration'>,
+): number {
+  const { currentTime, duration } = episode
+  if (!duration || !Number.isFinite(duration)
+    || !currentTime || !Number.isFinite(currentTime)) {
+    return Number.NaN
+  }
+  return Math.min(Math.floor((currentTime / duration) * 100), 100)
 }
 
 function getDisplayTime(time: number) {
@@ -47,21 +58,11 @@ export function useAnime1EpisodeQuery() {
           return episodeMatch ? Number.parseInt(episodeMatch[1], 10) : null
         })()
         const displayEpisodeNumber = `${episodeNumber ?? '剧场版'}`.padStart(2, '0')
-        const categoryTitle = ((): string => {
-          // Remove [01] from title if exists
-          const categoryName = ep.title.trim().replace(/\s*\[\d+\]$/, '')
-          return categoryName
-        })()
-        const progressPercent = ((): number => {
-          if (ep.duration && Number.isFinite(ep.duration)
-            && ep.currentTime && Number.isFinite(ep.currentTime)) {
-            return Math.min(Math.floor((ep.currentTime / ep.duration) * 100), 100)
-          }
-          return Number.NaN
-        })()
-        const isFinished = ((): boolean => {
-          return progressPercent >= 90
-        })()
+        // Remove [01] from title if exists
+        const categoryTitle = ep.title.trim().replace(/\s*\[\d+\]$/, '')
+        const progressPercent = computeProgressPercent(ep)
+        // 有闩锁则以后者为准，否则退回按进度推导
+        const isFinished = ep.finished ?? (progressPercent >= FINISHED_PROGRESS_PERCENT)
 
         return {
           ...ep,
@@ -89,19 +90,69 @@ export function useAnime1EpisodeRefetch() {
   }, [client])
 }
 
+export function useAnime1CategoriesRefetch() {
+  const client = useQueryClient()
+  return useCallback(() => {
+    return client.invalidateQueries({ queryKey: ['anime1Categories'] })
+  }, [client])
+}
+
 export function useAnime1EpisodeBatchUpdate() {
   return useMutation({
     mutationFn: async (batch: StorageAnime1Episode[]) => {
       const anime1Episodes = await storageAnime1Episodes.getValue()
       const anime1EpisodesMap = _.keyBy(anime1Episodes, 'id')
+      let changed = false
       batch.forEach((episode) => {
-        anime1EpisodesMap[episode.id] = episode
+        const stored = anime1EpisodesMap[episode.id]
+        // 进度一致则不更新，主要是 updatedAt
+        if (stored && stored.currentTime === episode.currentTime && stored.duration === episode.duration) {
+          return
+        }
+        anime1EpisodesMap[episode.id] = {
+          ...episode,
+          finished: stored?.finished === true
+            || computeProgressPercent(episode) >= FINISHED_PROGRESS_PERCENT,
+        }
+        changed = true
       })
+      if (!changed) {
+        return anime1EpisodesMap
+      }
       await storageAnime1Episodes.setValue(Object.values(anime1EpisodesMap))
       return anime1EpisodesMap
     },
     onSuccess() {
       queryClient.invalidateQueries({ queryKey: ['anime1Episodes'] })
+    },
+  })
+}
+
+export function useAnime1CategoriesQuery() {
+  return useQuery({
+    queryKey: ['anime1Categories'],
+    queryFn: async () => _.keyBy(await storageAnime1Categories.getValue(), 'id'),
+  })
+}
+
+export function useAnime1CategoriesMutation() {
+  return useMutation({
+    mutationFn: async (input: { categoryId: string, archived: boolean }) => {
+      const { categoryId, archived } = input
+      const current = await storageAnime1Categories.getValue()
+      const record: StorageAnime1Category = {
+        ...current.find(category => category.id === categoryId),
+        id: categoryId,
+        archivedAt: archived ? Date.now() : null,
+      }
+      await storageAnime1Categories.setValue(
+        current.some(category => category.id === categoryId)
+          ? current.map(category => (category.id === categoryId ? record : category))
+          : [...current, record],
+      )
+    },
+    onSuccess() {
+      queryClient.invalidateQueries({ queryKey: ['anime1Categories'] })
     },
   })
 }
@@ -134,7 +185,6 @@ export function useAnime1CategoryQuery() {
       if (!response.ok) {
         throw new Error(`Failed to fetch anime1 data: ${response.statusText}`)
       }
-      console.log('Fetching anime1 data...')
       const data: Anime1DataRaw = await response.json()
       return data.reduce((acc, [id, title, status, year, season, fansub]) => {
         // Parse status & lastEpisode

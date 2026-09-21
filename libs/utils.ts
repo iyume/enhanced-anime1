@@ -63,8 +63,14 @@ export function downloadJsonFile(filename: string, data: unknown) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
+export function anime1CategoryUrl(categoryId: string) {
+  return `https://anime1.me/?cat=${categoryId}`
+}
+
+export function anime1EpisodeUrl(episodeId: string) {
+  return `https://anime1.me/?p=${episodeId}`
+}
+
 export function openAnime1CategoryPage(categoryId: string) {
-  const url = `https://anime1.me/?cat=${categoryId}`
-  // Open in a new tab
-  window.open(url, '_self')
+  window.open(anime1CategoryUrl(categoryId), '_self')
 }

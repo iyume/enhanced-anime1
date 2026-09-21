@@ -5,9 +5,25 @@ export interface StorageAnime1Episode {
   currentTime: number
   duration: number
   updatedAt: number
+  finished?: boolean
 }
 
+/**
+ * Changelog:
+ * v1 → v2：Add field `finished`
+ */
 export const storageAnime1Episodes = storage.defineItem<StorageAnime1Episode[]>('local:Anime1Episodes', {
+  version: 2,
+  fallback: [],
+  migrations: {},
+})
+
+export interface StorageAnime1Category {
+  id: string
+  archivedAt: number | null
+}
+
+export const storageAnime1Categories = storage.defineItem<StorageAnime1Category[]>('local:Anime1Categories', {
   version: 1,
   fallback: [],
 })

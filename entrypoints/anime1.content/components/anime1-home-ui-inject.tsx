@@ -1,8 +1,22 @@
 import type { FC } from 'react'
-import _ from 'lodash'
-import { useAnime1EpisodeQuery } from '@/libs/query'
+import type { IAnime1RichEpisode } from '@/libs/query'
+import { useAnime1CategoriesQuery, useAnime1CategoryQuery, useAnime1EpisodeQuery } from '@/libs/query'
 import { openAnime1CategoryPage, setIfChanged } from '@/libs/utils'
+import { findLastWatched, isCaughtUp, summarizeSeries } from '@/libs/watch-board'
 import { useEffectOnce } from '../hooks/common/useEffectOnce'
+
+const BOARD_BADGE_CLASS = 'anime1-board-badge'
+const CAUGHT_UP_CLASS = 'ext-caught-up'
+
+function progressBadgeMarkup(lastWatched: IAnime1RichEpisode): string {
+  const label = lastWatched.displayEpisodeNumber === '剧场版'
+    ? '上次观看至'
+    : `上次观看至 ${lastWatched.displayEpisodeNumber} 话`
+  return `
+        <span style="font-size: 0.8rem;margin-right: 4px;">▶ </span>
+        <span>${label} ${lastWatched.displayCurrentTime}</span>
+      `
+}
 
 function useDocumentMutationObserver(callback: MutationCallback) {
   const [isEnabled, setIsEnabled] = useState(true)
@@ -43,21 +57,10 @@ function parseCategoryIdFromUrl(url: string): string {
   return ''
 }
 
-// Parse `XXX(05)` and `1-12`
-function parseEpisodeFromTableCell(td: HTMLTableCellElement): number | null {
-  let match = td.textContent?.match(/\((\d+)\)/)
-  if (match) {
-    return Number.parseInt(match[1])
-  }
-  match = td.textContent?.match(/^(\d+)-(\d+)\+?/)
-  if (match) {
-    return Number.parseInt(match[2])
-  }
-  return null
-}
-
 export const Anime1HomeUIInject: FC = () => {
   const { data } = useAnime1EpisodeQuery()
+  const { data: categoryData } = useAnime1CategoryQuery()
+  const { data: categoryRecords } = useAnime1CategoriesQuery()
   const getHomeRows = () => Array.from(document.querySelectorAll('table tbody tr')) as HTMLTableRowElement[]
   const [episodeTrElements, setEpisodeTrElements] = useState<HTMLTableRowElement[]>([])
 
@@ -84,20 +87,15 @@ export const Anime1HomeUIInject: FC = () => {
   })
 
   useEffect(() => {
-    if (!episodeTrElements.length || !data) {
+    if (!episodeTrElements.length || !data || !categoryRecords) {
       return
     }
-    console.log('Process', episodeTrElements)
     episodeTrElements.forEach((tr) => {
       const tdList = tr.querySelectorAll('td')
       if (tdList.length < 2) {
         return
       }
-      const [titleTd, episodeTd, ..._rest] = tdList
-      if (titleTd.children.length > 1) {
-        // Already processed
-        return
-      }
+      const titleTd = tdList[0]
       const titleAnchor = titleTd.querySelector('a')
       if (!titleAnchor) {
         return
@@ -106,53 +104,47 @@ export const Anime1HomeUIInject: FC = () => {
       if (!categoryId) {
         return
       }
-      // 页面上只显示最新一集，当最新一集看过则置灰，再展示最后看的进度
       const episodes = Object.values(data).filter(ep => ep.categoryId === categoryId)
-      const lastWatchEpisode = _.maxBy(episodes, x => x.updatedAt)
-      if (!lastWatchEpisode) {
+      if (episodes.length === 0) {
         return
       }
 
-      const makeTableRowGray = () => {
-        // 这里是幂等的，暂时不用处理
-        tr.style.color = '#9ca3af'
-        titleAnchor.style.color = '#9ca3af'
-        tr.style.textDecoration = 'line-through'
+      const isArchived = categoryRecords[categoryId]?.archivedAt != null
+      const nextDisplay = isArchived ? 'none' : ''
+      if (tr.style.display !== nextDisplay) {
+        tr.style.display = nextDisplay
       }
-      // 如果当前集（最新一集或者最后一集）已经看完，则置灰
-      const cellEpisodeNumber = parseEpisodeFromTableCell(episodeTd)
-      if (cellEpisodeNumber !== null) {
-        const cellEpisode = episodes.find(ep => ep.episodeNumber === cellEpisodeNumber)
-        if (cellEpisode && cellEpisode.isFinished) {
-          makeTableRowGray()
-          return
-        }
+      if (isArchived) {
+        titleTd.querySelector<HTMLElement>(`.${BOARD_BADGE_CLASS}`)?.remove()
+        return
       }
-      if (episodeTd.textContent?.includes('劇場版')) {
-        const episode = episodes[0]
-        if (episode && episode.isFinished) {
-          makeTableRowGray()
-          return
-        }
+
+      const summary = summarizeSeries(episodes, categoryData?.[categoryId] ?? null)
+      const caughtUp = isCaughtUp(summary, episodes)
+
+      tr.classList.toggle(CAUGHT_UP_CLASS, caughtUp)
+
+      const existing = titleTd.querySelector<HTMLElement>(`.${BOARD_BADGE_CLASS}`)
+      if (caughtUp) {
+        existing?.remove()
+        return
+      }
+
+      const markup = progressBadgeMarkup(findLastWatched(episodes))
+      if (existing) {
+        existing.innerHTML = markup
+        return
       }
 
       titleAnchor.style.marginRight = '8px'
-      const progressBadge = document.createElement('span')
-      progressBadge.className = 'ext-badge ext-hover-shadow'
-      progressBadge.innerHTML = `
-        <span style="font-size: 0.8rem;margin-right: 4px;">▶ </span>
-        <span>上次观看至${lastWatchEpisode.displayEpisodeNumber !== '剧场版' ? ` ${lastWatchEpisode.displayEpisodeNumber} 话` : ''} ${lastWatchEpisode.displayCurrentTime}</span>
-      `
-      const handleClick = () => {
-        openAnime1CategoryPage(categoryId)
-      }
-      // There is no need to removeEventListener because anime1 cache the object
+      const badge = document.createElement('span')
+      badge.className = `ext-badge ext-hover-shadow ${BOARD_BADGE_CLASS}`
+      badge.innerHTML = markup
       // eslint-disable-next-line react-web-api/no-leaked-event-listener
-      progressBadge.addEventListener('click', handleClick)
-
-      titleTd.appendChild(progressBadge)
+      badge.addEventListener('click', () => openAnime1CategoryPage(categoryId))
+      titleTd.appendChild(badge)
     })
-  }, [episodeTrElements, data])
+  }, [episodeTrElements, data, categoryData, categoryRecords])
 
   return null
 }

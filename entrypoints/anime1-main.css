@@ -41,6 +41,11 @@
   cursor: pointer;
 }
 
+.ext-caught-up,
+.ext-caught-up a {
+  color: #9ca3af !important;
+}
+
 .anime1-video-notification {
   position: absolute;
   bottom: 36px;

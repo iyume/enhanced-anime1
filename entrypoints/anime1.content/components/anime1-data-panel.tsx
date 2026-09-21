@@ -1,15 +1,16 @@
 import type { ChangeEvent, FC } from 'react'
 import type { StorageAnime1Episode } from '@/libs/storage'
+import { formatRelativeTime } from '@/libs/format'
 import {
   createProgressFile,
-  formatProgressDateTime,
+  mergeCategories,
   mergeEpisodes,
   parseProgressFile,
   progressFileName,
   summarizeEpisodes,
 } from '@/libs/progress-transfer'
-import { useAnime1EpisodeQuery, useAnime1EpisodeRefetch } from '@/libs/query'
-import { storageAnime1Episodes } from '@/libs/storage'
+import { useAnime1CategoriesQuery, useAnime1CategoriesRefetch, useAnime1EpisodeQuery, useAnime1EpisodeRefetch } from '@/libs/query'
+import { storageAnime1Categories, storageAnime1Episodes } from '@/libs/storage'
 import { downloadJsonFile } from '@/libs/utils'
 
 interface Status {
@@ -20,24 +21,11 @@ interface Status {
 const actionButtonClass = 'w-full rounded-md border bg-(--background) px-3 py-2 text-sm font-medium '
   + 'text-(--text) transition-colors hover:bg-(--muted)/40 disabled:cursor-not-allowed disabled:opacity-50'
 
-function timeAgo(timestamp: number) {
-  const minutes = Math.floor((Date.now() - timestamp) / (1000 * 60))
-  if (minutes < 1)
-    return '刚刚'
-  if (minutes < 60)
-    return `${minutes} 分钟前`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24)
-    return `${hours} 小时前`
-  const days = Math.floor(hours / 24)
-  if (days < 30)
-    return `${days} 天前`
-  return formatProgressDateTime(timestamp)
-}
-
 export const Anime1DataPanel: FC = () => {
   const { data } = useAnime1EpisodeQuery()
-  const refetch = useAnime1EpisodeRefetch()
+  const { data: categoryState } = useAnime1CategoriesQuery()
+  const refetchEpisodes = useAnime1EpisodeRefetch()
+  const refetchCategories = useAnime1CategoriesRefetch()
   const [status, setStatus] = useState<Status | null>(null)
   const [isBusy, setIsBusy] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -51,10 +39,14 @@ export const Anime1DataPanel: FC = () => {
       currentTime: episode.currentTime,
       duration: episode.duration,
       updatedAt: episode.updatedAt,
+      finished: episode.finished,
     }))
   }, [data])
 
   const summary = useMemo(() => summarizeEpisodes(episodes), [episodes])
+  const archivedCount = Object.values(categoryState ?? {})
+    .filter(category => category.archivedAt != null)
+    .length
 
   // Kept synchronous on purpose: the download has to start within the click's
   // user activation, so it cannot wait on an async storage read first
@@ -63,7 +55,7 @@ export const Anime1DataPanel: FC = () => {
       return
     downloadJsonFile(
       progressFileName(),
-      createProgressFile(episodes, browser.runtime.getManifest().version),
+      createProgressFile(episodes, Object.values(categoryState ?? {}), browser.runtime.getManifest().version),
     )
     setStatus({ type: 'success', message: `已导出 ${episodes.length} 集进度` })
   }
@@ -81,10 +73,14 @@ export const Anime1DataPanel: FC = () => {
       const stored = await storageAnime1Episodes.getValue()
       const merged = mergeEpisodes(stored, imported.episodes)
       await storageAnime1Episodes.setValue(merged.episodes)
-      await refetch()
+      const storedCategories = await storageAnime1Categories.getValue()
+      const mergedCategories = mergeCategories(storedCategories, imported.categories)
+      await storageAnime1Categories.setValue(mergedCategories.categories)
+      await Promise.all([refetchEpisodes(), refetchCategories()])
+      const archivedSuffix = mergedCategories.added > 0 ? ` · 废弃 ${mergedCategories.added} 部` : ''
       setStatus({
         type: 'success',
-        message: `新增 ${merged.added} 集 · 更新 ${merged.updated} 集 · 跳过 ${merged.skipped} 集`,
+        message: `新增 ${merged.added} 集 · 更新 ${merged.updated} 集 · 跳过 ${merged.skipped} 集${archivedSuffix}`,
       })
     }
     catch (error) {
@@ -118,7 +114,8 @@ export const Anime1DataPanel: FC = () => {
           <p className="mt-1 text-xs text-(--muted-text)">
             {summary.lastUpdatedAt === null
               ? '还没有任何观看记录，看一集就会自动记录'
-              : `最后更新：${timeAgo(summary.lastUpdatedAt)}`}
+              : `最后更新：${formatRelativeTime(summary.lastUpdatedAt)}`}
+            {archivedCount > 0 && ` · 已废弃 ${archivedCount} 部`}
           </p>
         </div>
       </section>

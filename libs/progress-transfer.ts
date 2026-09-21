@@ -1,11 +1,16 @@
-import type { StorageAnime1Episode } from './storage'
+import type { StorageAnime1Category, StorageAnime1Episode } from './storage'
 
 /**
  * Marker written into exported files. It keeps us from importing an unrelated
  * JSON file (e.g. anime1's own animelist.json) and silently trashing the data.
  */
 export const PROGRESS_FILE_FORMAT = 'enhanced-anime1/progress'
-export const PROGRESS_FILE_VERSION = 1
+
+/**
+ * Changelog:
+ * v1 → v2：Add field `categories`
+ */
+export const PROGRESS_FILE_VERSION = 2
 
 export interface ProgressFile {
   format: typeof PROGRESS_FILE_FORMAT
@@ -13,6 +18,7 @@ export interface ProgressFile {
   exportedAt: number
   appVersion: string
   episodes: StorageAnime1Episode[]
+  categories: StorageAnime1Category[]
 }
 
 export interface ProgressSummary {
@@ -22,11 +28,9 @@ export interface ProgressSummary {
 }
 
 export interface MergeResult {
-  /** The full episode list to write back to the storage. */
   episodes: StorageAnime1Episode[]
   added: number
   updated: number
-  /** Incoming entries that are older than what we already have locally. */
   skipped: number
 }
 
@@ -40,12 +44,11 @@ function sortEpisodes(episodes: StorageAnime1Episode[]) {
   )
 }
 
-/** Returns `null` for anything that is not a well-formed episode record. */
 function parseEpisode(raw: unknown): StorageAnime1Episode | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
     return null
   }
-  const { id, categoryId, title, currentTime, duration, updatedAt }
+  const { id, categoryId, title, currentTime, duration, updatedAt, finished }
     = raw as Record<string, unknown>
 
   if (typeof id !== 'string' || !id) {
@@ -61,15 +64,18 @@ function parseEpisode(raw: unknown): StorageAnime1Episode | null {
     return null
   }
 
-  return {
+  const episode: StorageAnime1Episode = {
     id,
     categoryId,
     title,
-    // Negative values would render as a broken progress bar
     currentTime: Math.max(0, currentTime),
     duration: Math.max(0, duration),
     updatedAt,
   }
+  if (finished === true) {
+    episode.finished = true
+  }
+  return episode
 }
 
 export function summarizeEpisodes(episodes: StorageAnime1Episode[]): ProgressSummary {
@@ -82,13 +88,64 @@ export function summarizeEpisodes(episodes: StorageAnime1Episode[]): ProgressSum
   }
 }
 
-export function createProgressFile(episodes: StorageAnime1Episode[], appVersion: string): ProgressFile {
+function parseCategories(raw: unknown): StorageAnime1Category[] {
+  if (!Array.isArray(raw)) {
+    return []
+  }
+  const result: StorageAnime1Category[] = []
+  for (const item of raw) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) {
+      continue
+    }
+    const { id, archivedAt } = item as Record<string, unknown>
+    if (typeof id !== 'string' || !id) {
+      continue
+    }
+    if (!isFiniteNumber(archivedAt) || archivedAt <= 0) {
+      continue
+    }
+    result.push({ id, archivedAt })
+  }
+  return result
+}
+
+export interface MergeCategoriesResult {
+  categories: StorageAnime1Category[]
+  added: number
+}
+
+export function mergeCategories(
+  local: StorageAnime1Category[],
+  incoming: StorageAnime1Category[],
+): MergeCategoriesResult {
+  const byId = new Map(local.map(category => [category.id, category]))
+  let added = 0
+  for (const category of incoming) {
+    const existing = byId.get(category.id)
+    if (!existing) {
+      byId.set(category.id, category)
+      added += 1
+      continue
+    }
+    if ((category.archivedAt ?? 0) > (existing.archivedAt ?? 0)) {
+      byId.set(category.id, category)
+    }
+  }
+  return { categories: [...byId.values()], added }
+}
+
+export function createProgressFile(
+  episodes: StorageAnime1Episode[],
+  categories: StorageAnime1Category[],
+  appVersion: string,
+): ProgressFile {
   return {
     format: PROGRESS_FILE_FORMAT,
     version: PROGRESS_FILE_VERSION,
     exportedAt: Date.now(),
     appVersion,
     episodes: sortEpisodes(episodes),
+    categories: [...categories].sort((a, b) => a.id.localeCompare(b.id)),
   }
 }
 
@@ -107,10 +164,6 @@ export function progressFileName(now = new Date()) {
     + `${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.json`
 }
 
-/**
- * Parses an exported file. Throws an `Error` carrying a message that is meant
- * to be shown to the user as-is.
- */
 export function parseProgressFile(text: string): ProgressFile {
   let raw: unknown
   try {
@@ -124,7 +177,7 @@ export function parseProgressFile(text: string): ProgressFile {
     throw new Error('这不是 Enhanced Anime1 导出的进度文件')
   }
 
-  const { format, version, exportedAt, appVersion, episodes } = raw as Record<string, unknown>
+  const { format, version, exportedAt, appVersion, episodes, categories } = raw as Record<string, unknown>
   if (format !== PROGRESS_FILE_FORMAT) {
     throw new Error('这不是 Enhanced Anime1 导出的进度文件')
   }
@@ -149,13 +202,20 @@ export function parseProgressFile(text: string): ProgressFile {
     exportedAt: isFiniteNumber(exportedAt) ? exportedAt : 0,
     appVersion: typeof appVersion === 'string' ? appVersion : '',
     episodes: parsed,
+    categories: parseCategories(categories),
   }
 }
 
-/**
- * Merges the incoming episodes into the local ones. Same episode id keeps
- * whichever record was updated most recently, so nothing is ever deleted.
- */
+function latchFinished(
+  record: StorageAnime1Episode,
+  other: StorageAnime1Episode,
+): StorageAnime1Episode {
+  if (other.finished !== true || record.finished === true) {
+    return record
+  }
+  return { ...record, finished: true }
+}
+
 export function mergeEpisodes(
   local: StorageAnime1Episode[],
   incoming: StorageAnime1Episode[],
@@ -172,10 +232,11 @@ export function mergeEpisodes(
       added += 1
     }
     else if (episode.updatedAt > existing.updatedAt) {
-      byId.set(episode.id, episode)
+      byId.set(episode.id, latchFinished(episode, existing))
       updated += 1
     }
     else {
+      byId.set(episode.id, latchFinished(existing, episode))
       skipped += 1
     }
   }
