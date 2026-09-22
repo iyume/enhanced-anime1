@@ -1,12 +1,13 @@
 import { resolve } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from 'wxt'
+import { cspGuard } from './scripts/csp-guard.ts'
 
 export default defineConfig({
   modules: ['@wxt-dev/module-react', '@wxt-dev/auto-icons'],
 
   vite: _ => ({
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), cspGuard()],
   }),
 
   webExt: {
@@ -44,6 +45,9 @@ export default defineConfig({
     browser_specific_settings: {
       gecko: {
         id: 'iyumelive@gmail.com', // UUID or email for Firefox
+        data_collection_permissions: {
+          required: ['none'],
+        },
       },
     },
   },

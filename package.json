@@ -13,6 +13,7 @@
     "zip": "wxt zip",
     "zip:firefox": "wxt zip -b firefox",
     "compile": "tsc --noEmit",
+    "check:csp": "node scripts/check-csp.ts",
     "postinstall": "wxt prepare",
     "lint": "eslint",
     "lint:fix": "eslint --fix"
@@ -20,12 +21,11 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.8",
     "@tanstack/react-query": "^5.80.3",
-    "@types/lodash": "^4.17.17",
     "@webext-core/messaging": "^2.2.0",
     "@webext-core/proxy-service": "^1.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lodash": "^4.17.21",
+    "es-toolkit": "^1.52.0",
     "lucide-react": "^0.508.0",
     "motion": "^12.16.0",
     "openapi-fetch": "^0.13.8",

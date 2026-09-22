@@ -34,8 +34,6 @@ export default defineContentScript({
           return
         }
 
-        // registerAnime1StorageEvent()
-
         const wrapper = document.createElement('div')
         wrapper.id = 'app-wrapper'
         container.append(wrapper)

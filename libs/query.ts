@@ -1,6 +1,6 @@
 import type { StorageAnime1Category, StorageAnime1Episode } from './storage'
 import { QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import _ from 'lodash'
+import { keyBy } from 'es-toolkit'
 import { storageAnime1Categories, storageAnime1Episodes } from './storage'
 
 export const queryClient = new QueryClient({
@@ -76,7 +76,7 @@ export function useAnime1EpisodeQuery() {
         } satisfies IAnime1RichEpisode
       })
 
-      return _.keyBy(richAnime1Episodes, 'id')
+      return keyBy(richAnime1Episodes, ep => ep.id)
     },
   })
 }
@@ -101,7 +101,7 @@ export function useAnime1EpisodeBatchUpdate() {
   return useMutation({
     mutationFn: async (batch: StorageAnime1Episode[]) => {
       const anime1Episodes = await storageAnime1Episodes.getValue()
-      const anime1EpisodesMap = _.keyBy(anime1Episodes, 'id')
+      const anime1EpisodesMap = keyBy(anime1Episodes, ep => ep.id)
       let changed = false
       batch.forEach((episode) => {
         const stored = anime1EpisodesMap[episode.id]
@@ -131,7 +131,7 @@ export function useAnime1EpisodeBatchUpdate() {
 export function useAnime1CategoriesQuery() {
   return useQuery({
     queryKey: ['anime1Categories'],
-    queryFn: async () => _.keyBy(await storageAnime1Categories.getValue(), 'id'),
+    queryFn: async () => keyBy(await storageAnime1Categories.getValue(), category => category.id),
   })
 }
 

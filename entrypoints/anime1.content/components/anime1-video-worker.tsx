@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import type { IAnime1Post } from '@/libs/anime1-site-parser'
 import type { StorageAnime1Episode } from '@/libs/storage'
-import { throttle } from 'lodash'
+import { throttle } from 'es-toolkit'
 import { memo } from 'react'
 import { useAnime1EpisodeBatchUpdate } from '@/libs/query'
 import { useAfterRerender } from '../hooks/common/useAfterRerender'
@@ -33,10 +33,12 @@ export const Anime1VideoWorkers: FC = memo(() => {
     console.log('trigger after re-render for workers', videosProgress)
   })
   const trottledSyncAnime1Episodes = useMemo(() => {
+    // 默认 edges 即 lodash 的 throttle(fn, 1000)（leading + trailing）。
+    // 唯一差异：es-toolkit 没有 maxWait，一段连续上报结束后的最后一次落盘会晚约 0.5s
     return throttle((episodes: StorageAnime1Episode[]) => {
       console.log('[Storage] Sync anime1Episodes', new Date().toLocaleString())
       mutate(episodes)
-    }, 1000, { leading: false, trailing: true })
+    }, 1000)
   }, [mutate])
 
   useEffect(() => {
