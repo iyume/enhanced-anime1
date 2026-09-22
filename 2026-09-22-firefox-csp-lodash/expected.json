@@ -1,0 +1,19 @@
+{
+  "_comment": "Fingerprints of the two content scripts reproduce.sh builds. Read by verify.mjs; also the table in README.md.",
+  "old": {
+    "wxt": "0.20.7",
+    "toolchain": "vite 6.4.3 + rollup 4.63.4",
+    "bytes": 76008,
+    "sha256": "967ff24fe327ac733a78147b1e697a2e7c691b0e172542525e64fb757279bc9e",
+    "functionAt": 6722,
+    "shim": true
+  },
+  "new": {
+    "wxt": "0.20.27",
+    "toolchain": "vite 8.3.0 + rolldown 1.2.9",
+    "bytes": 74374,
+    "sha256": "e9c0e4c36e2a25d2e02a058674f93c8c87c6a9c23545c9d68056479d8bce70aa",
+    "functionAt": 5747,
+    "shim": false
+  }
+}

@@ -1,0 +1,3 @@
+# Byte slices in here are quoted with their exact offsets and hashes, so no EOL
+# munging on checkout: what lands on disk must equal what was extracted.
+* -text

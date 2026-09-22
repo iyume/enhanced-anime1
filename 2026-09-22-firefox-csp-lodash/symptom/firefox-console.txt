@@ -1,0 +1,41 @@
+Transcribed from the Firefox browser console after installing the v1.1.0 release.
+Line/column numbers are as Firefox reported them.
+
+  EvalError: call to Function() blocked by CSP
+    import_lodash            moz-extension://66fa15ec-4836-45b1-a0cd-61951f8a59c9/content-scripts/anime1.js:22360:41
+    import_lodash            moz-extension://66fa15ec-4836-45b1-a0cd-61951f8a59c9/content-scripts/anime1.js:36510
+    anime1                   moz-extension://66fa15ec-4836-45b1-a0cd-61951f8a59c9/content-scripts/anime1.js:17
+    anime1                   moz-extension://66fa15ec-4836-45b1-a0cd-61951f8a59c9/content-scripts/anime1.js:36511
+    <anonymous>              moz-extension://66fa15ec-4836-45b1-a0cd-61951f8a59c9/content-scripts/anime1.js:51908
+    #injectIntoIsolatedWorld resource://gre/modules/ExtensionContent.sys.mjs:711
+    inject                   resource://gre/modules/ExtensionContent.sys.mjs:696
+
+Reading the frames
+------------------
+The two frames that matter are the top one and the last two.
+
+  `#injectIntoIsolatedWorld` is Firefox building the isolated world (the sandbox) for
+  the content script. So the throw happens during content-script *initialisation*.
+
+  `import_lodash` at the top is lodash's `_root.js` module body executing. `_root.js`
+  ends with
+
+      var root = freeGlobal || freeSelf || Function('return this')();
+
+  and it is the third operand that the CSP refuses. Because this runs while the module
+  graph is initialising, it happens before WXT's entry wrapper reaches `main()`
+  (`anime1 ... anime1.js:17` is that wrapper, and the `try/catch` inside it is never
+  reached), so the whole content script is dead — not degraded, not partial: no UI at
+  all on Firefox.
+
+  `anime1.js:22360:41` is column 41 of the minified line, i.e. the exact `Function(`
+  call. In the v1.1.0 bundle the `Function(` token sits at byte offset 270736; the
+  minimal repro in repro/ shows the same call at byte 5747 of its own bundle
+  (see bundler-diff/new-wxt.js), and not reached at all in the older-wxt build.
+
+Not a Firefox bug
+-----------------
+MV3 content scripts share the extension CSP, which is `script-src 'self'`.
+'unsafe-eval' cannot be used in MV3 `extension_pages` at all — AMO would reject the
+submission — so "just allow eval" is not a way out. The bundle has to stop reaching
+`eval`/`Function` at module-init time.
