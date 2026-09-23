@@ -127,10 +127,6 @@ function resolveTitle(meta: Anime1Category | null, lastWatched: IAnime1RichEpiso
   return lastWatched.categoryTitle.trim() || lastWatched.title
 }
 
-function compareByBehind(a: WatchBoardEntry, b: WatchBoardEntry): number {
-  return (b.behindCount ?? 0) - (a.behindCount ?? 0) || b.lastWatchedAt - a.lastWatchedAt
-}
-
 function compareByRecent(a: WatchBoardEntry, b: WatchBoardEntry): number {
   return b.lastWatchedAt - a.lastWatchedAt
 }
@@ -180,7 +176,7 @@ export function buildWatchBoard(
     })
   }
 
-  const behind = entries.filter(entry => entry.group === 'behind').sort(compareByBehind)
+  const behind = entries.filter(entry => entry.group === 'behind').sort(compareByRecent)
   const caughtUp = entries.filter(entry => entry.group === 'caughtUp').sort(compareByRecent)
   const unknown = entries.filter(entry => entry.group === 'unknown').sort(compareByRecent)
   const archivedEntries = entries.filter(entry => entry.group === 'archived').sort(compareByArchived)
